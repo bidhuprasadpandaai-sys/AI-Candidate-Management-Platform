@@ -1,0 +1,10 @@
+{
+  "name": "@acmp/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node -e \"console.log('Shared package ready')\""
+  }
+}

@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Candidate Management Platform | Project Flow</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f9fbfd;
+      --line: #d8e0ea;
+      --line-strong: #b8c4d4;
+      --text: #172033;
+      --muted: #66748a;
+      --accent: #0f766e;
+      --accent-soft: #e6f5f2;
+      --blue: #2563eb;
+      --pink: #db2777;
+      --amber: #b45309;
+      --shadow: 0 14px 32px rgba(22, 32, 51, 0.08);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.35) 1px, transparent 1px),
+        linear-gradient(rgba(216, 224, 234, 0.35) 1px, transparent 1px),
+        var(--bg);
+      background-size: 32px 32px;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-top: 18px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .section-title h2 {
+      font-size: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .node {
+      min-height: 112px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 12px;
+      position: relative;
+    }
+
+    .node::after {
+      content: ">";
+      position: absolute;
+      right: -11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--line-strong);
+      font-weight: 800;
+      z-index: 1;
+    }
+
+    .node:last-child::after {
+      content: "";
+    }
+
+    .node small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .node p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .page-nav {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      position: sticky;
+      top: 16px;
+    }
+
+    .page-button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+    }
+
+    .page-button strong {
+      font-size: 14px;
+    }
+
+    .page-button span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .page-button.active {
+      background: var(--accent-soft);
+      border-color: #9bd4cb;
+      color: #064e45;
+    }
+
+    .page-detail {
+      padding: 16px;
+    }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .route {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .detail-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--panel-soft);
+    }
+
+    .detail-card h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 17px;
+    }
+
+    li {
+      margin: 7px 0;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .matrix {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      background: #f3f6fa;
+      color: #334155;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    td:first-child {
+      font-weight: 800;
+      color: #0f3f3a;
+    }
+
+    .pill {
+      display: inline-flex;
+      margin: 0 4px 4px 0;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #edf2f7;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .stack-card {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      padding: 12px;
+    }
+
+    .stack-card h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .stack-card:nth-child(1) h3 {
+      color: var(--blue);
+    }
+
+    .stack-card:nth-child(2) h3 {
+      color: var(--accent);
+    }
+
+    .stack-card:nth-child(3) h3 {
+      color: var(--pink);
+    }
+
+    .stack-card:nth-child(4) h3 {
+      color: var(--amber);
+    }
+
+    @media (max-width: 960px) {
+      .topbar,
+      .page-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .badge-row {
+        justify-content: flex-start;
+      }
+
+      .flow,
+      .architecture,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .node::after {
+        content: "v";
+        right: 16px;
+        top: auto;
+        bottom: -16px;
+      }
+
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-nav {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">AI</div>
+        <div>
+          <h1>Project Flow and Component Map</h1>
+          <p class="subtitle">AI Candidate Management Platform</p>
+        </div>
+      </div>
+      <div class="badge-row">
+        <span class="badge">Vue 3</span>
+        <span class="badge">Pinia</span>
+        <span class="badge">PrimeVue</span>
+        <span class="badge">Express</span>
+        <span class="badge">MongoDB</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="section-title">
+        <h2>Application Flow</h2>
+      </div>
+      <div class="panel flow">
+        <div class="node">
+          <small>Entry</small>
+          <strong>Auth Routes</strong>
+          <p>Signin, signup, and reset password screens collect credentials and recovery inputs.</p>
+        </div>
+        <div class="node">
+          <small>Gate</small>
+          <strong>Session Check</strong>
+          <p>App shell calls the auth store and only renders protected modules when a user exists.</p>
+        </div>
+        <div class="node">
+          <small>Shell</small>
+          <strong>TalentOS Layout</strong>
+          <p>Sidebar navigation, profile menu, and active module area create the main workspace.</p>
+        </div>
+        <div class="node">
+          <small>Modules</small>
+          <strong>Page Components</strong>
+          <p>Overview, Candidates, Chat, Assistant, Analytics, and Profile screens load by module id.</p>
+        </div>
+        <div class="node">
+          <small>Data</small>
+          <strong>API and Stores</strong>
+          <p>Pinia stores call Express endpoints backed by MongoDB or in-memory demo data.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section layout-grid">
+      <aside class="panel page-nav" id="pageNav" aria-label="Project pages"></aside>
+      <article class="panel page-detail" id="pageDetail"></article>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <h2>Page to Component Matrix</h2>
+      </div>
+      <div class="panel matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>Page</th>
+              <th>Primary Components</th>
+              <th>Store or Package</th>
+              <th>API Surface</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <h2>System Layers</h2>
+      </div>
+      <div class="panel architecture">
+        <div class="stack-card">
+          <h3>Web App</h3>
+          <ul>
+            <li>apps/web/src/App.vue</li>
+            <li>apps/web/src/router/index.js</li>
+            <li>apps/web/src/services/api.js</li>
+          </ul>
+        </div>
+        <div class="stack-card">
+          <h3>State</h3>
+          <ul>
+            <li>stores/auth.js for sessions and logout</li>
+            <li>stores/candidates.js for shell modules and candidate data</li>
+            <li>packages/chat composable for conversations and messages</li>
+          </ul>
+        </div>
+        <div class="stack-card">
+          <h3>API</h3>
+          <ul>
+            <li>apps/api/src/index.js</li>
+            <li>apps/api/src/routes/auth.js</li>
+            <li>Health, modules, candidates, conversations, analytics</li>
+          </ul>
+        </div>
+        <div class="stack-card">
+          <h3>Models</h3>
+          <ul>
+            <li>User</li>
+            <li>Candidate</li>
+            <li>Conversation</li>
+            <li>Message</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const pages = [
+      {
+        name: "Sign In",
+        route: "/signin",
+        file: "apps/web/src/views/SignIn.vue",
+        purpose: "Authenticates recruiters and starts the protected app session.",
+        components: ["InputText", "Password", "Checkbox", "Button", "Message"],
+        state: ["Local form state", "Router redirect"],
+        api: ["POST /api/auth/signin"],
+        notes: ["Redirects to the shell after successful login.", "Displays signup success and credential errors."]
+      },
+      {
+        name: "Sign Up",
+        route: "/signup",
+        file: "apps/web/src/views/SignUp.vue",
+        purpose: "Creates a recruiter account with name, email, role, phone, and password.",
+        components: ["InputText", "Password", "Checkbox", "Button", "Message"],
+        state: ["Local form state", "Terms acceptance"],
+        api: ["POST /api/auth/signup"],
+        notes: ["Validates password rules before submit.", "Sends user to Sign In after account creation."]
+      },
+      {
+        name: "Reset Password",
+        route: "/resetpassword",
+        file: "apps/web/src/views/ResetPassword.vue",
+        purpose: "Requests reset links and accepts token-based password resets.",
+        components: ["InputText", "Password", "Button", "Message"],
+        state: ["Route query token", "Local form state"],
+        api: ["POST /api/auth/request-reset", "POST /api/auth/reset"],
+        notes: ["Switches form behavior when a reset token exists."]
+      },
+      {
+        name: "Shell Layout",
+        route: "/",
+        file: "apps/web/src/App.vue",
+        purpose: "Protected workspace frame with sidebar modules, profile menu, and active module outlet.",
+        components: ["AppHeader", "RouterView", "Dynamic module component"],
+        state: ["useAuthStore", "useCandidateStore"],
+        api: ["GET /api/auth/me", "POST /api/auth/logout", "GET /api/health", "GET /api/modules"],
+        notes: ["Hides the app until authenticated.", "Profile menu opens Profile Settings or logs out."]
+      },
+      {
+        name: "Overview",
+        route: "module: overview",
+        file: "apps/web/src/components/modules/OverviewModule.vue",
+        purpose: "Shows platform health and hiring summary cards.",
+        components: ["DashboardCards", "OverviewModule"],
+        state: ["useCandidateStore.dashboard"],
+        api: ["GET /api/dashboard"],
+        notes: ["Uses seeded or MongoDB-backed metrics."]
+      },
+      {
+        name: "Candidates",
+        route: "module: candidates",
+        file: "apps/web/src/components/modules/CandidatesModule.vue",
+        purpose: "Manages the candidate pipeline and candidate chat subtab.",
+        components: ["CandidateList", "AddCandidateModal", "CandidateDetailSidebar", "CandidateChatSidebar", "ChatPanel"],
+        state: ["useCandidateStore", "useChat"],
+        api: ["GET /api/candidates", "POST /api/candidates", "PUT /api/candidates/:id", "DELETE /api/candidates/:id"],
+        notes: ["Supports filtering, column visibility, reorder, custom columns, group chat, and row detail."]
+      },
+      {
+        name: "Chat",
+        route: "module: chat",
+        file: "packages/chat/src/components/ChatPanel.vue",
+        purpose: "Conversation workspace for candidate messaging.",
+        components: ["ConversationList", "MessageThread", "NewConversationModal"],
+        state: ["packages/chat/src/composables/useChat.js"],
+        api: ["GET /api/conversations", "POST /api/conversations", "GET /api/conversations/:id/messages", "POST /api/conversations/:id/messages"],
+        notes: ["Supports attachments, emoji insertion, and scheduled messages."]
+      },
+      {
+        name: "AI Assistant",
+        route: "module: assistant",
+        file: "apps/web/src/components/modules/AssistantModule.vue",
+        purpose: "Recruiting assistant for candidate summaries and workflow commands.",
+        components: ["AIAssistantPanel"],
+        state: ["useCandidateStore.chatHistory"],
+        api: ["POST /api/chat"],
+        notes: ["Can summarize candidates and execute supported candidate commands."]
+      },
+      {
+        name: "Analytics",
+        route: "module: analytics",
+        file: "apps/web/src/components/modules/AnalyticsModule.vue",
+        purpose: "Hiring analytics for statuses, stages, experience, skills, and top candidates.",
+        components: ["AnalyticsModule"],
+        state: ["Local analytics request state"],
+        api: ["GET /api/analytics"],
+        notes: ["Visualizes pipeline distribution and candidate scoring."]
+      },
+      {
+        name: "Profile Settings",
+        route: "module: profile",
+        file: "apps/web/src/components/modules/ProfileModule.vue",
+        purpose: "Displays and updates user profile, profile picture, social links, and password.",
+        components: ["ProfileModule", "Button", "Message"],
+        state: ["useAuthStore", "Local edit draft state"],
+        api: ["PUT /api/auth/profile", "POST /api/auth/change-password"],
+        notes: ["Profile image uses local file preview and stores as data URL."]
+      }
+    ];
+
+    const pageNav = document.getElementById("pageNav");
+    const pageDetail = document.getElementById("pageDetail");
+    const matrixBody = document.getElementById("matrixBody");
+
+    function renderPills(items) {
+      return items.map((item) => `<span class="pill">${item}</span>`).join("");
+    }
+
+    function renderList(items) {
+      return `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+    }
+
+    function selectPage(index) {
+      const page = pages[index];
+      document.querySelectorAll(".page-button").forEach((button, buttonIndex) => {
+        button.classList.toggle("active", buttonIndex === index);
+      });
+
+      pageDetail.innerHTML = `
+        <div class="page-head">
+          <div>
+            <h2>${page.name}</h2>
+            <p class="route">${page.route} | ${page.file}</p>
+          </div>
+          <span class="tag">${page.api.length} API link${page.api.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h3>Purpose</h3>
+            <p class="subtitle">${page.purpose}</p>
+          </div>
+          <div class="detail-card">
+            <h3>Components</h3>
+            ${renderList(page.components)}
+          </div>
+          <div class="detail-card">
+            <h3>State</h3>
+            ${renderList(page.state)}
+          </div>
+          <div class="detail-card">
+            <h3>API</h3>
+            ${renderList(page.api)}
+          </div>
+          <div class="detail-card">
+            <h3>Notes</h3>
+            ${renderList(page.notes)}
+          </div>
+          <div class="detail-card">
+            <h3>Owner File</h3>
+            <p class="subtitle">${page.file}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    pages.forEach((page, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "page-button";
+      button.innerHTML = `<strong>${page.name}</strong><span>${page.route}</span>`;
+      button.addEventListener("click", () => selectPage(index));
+      pageNav.appendChild(button);
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${page.name}</td>
+        <td>${renderPills(page.components)}</td>
+        <td>${renderPills(page.state)}</td>
+        <td>${renderPills(page.api)}</td>
+      `;
+      matrixBody.appendChild(row);
+    });
+
+    selectPage(0);
+  </script>
+</body>
+</html>

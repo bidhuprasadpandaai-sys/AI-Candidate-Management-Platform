@@ -1,0 +1,14 @@
+{
+  "name": "@acmp/chat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node -e \"console.log('@acmp/chat package ready')\""
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0",
+    "vue": "^3.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "ai-candidate-management-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"yarn workspace web dev\" \"yarn workspace api dev\"",
+    "dev:web": "yarn workspace web dev",
+    "dev:api": "yarn workspace api dev",
+    "build": "yarn workspace @acmp/shared build && yarn workspace @acmp/chat build && yarn workspace web build && yarn workspace api build",
+    "seed": "yarn workspace api seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
