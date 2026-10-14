@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 import mongoose from "mongoose";
 import { User } from "../models/User.js";
 import { sendEmail } from "../utils/email.js";
-import { signToken, verifyToken } from "../utils/jwt.js";
+import { getTokenTtlSeconds, signToken, verifyToken } from "../utils/jwt.js";
 
 const router = express.Router();
 const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
@@ -261,7 +261,10 @@ router.post("/signin", async (req, res) => {
       if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
       const token = signToken({ id: user._id, email: user.email, role: user.role });
-      res.cookie("auth_token", token, authCookieOptions());
+      res.cookie("auth_token", token, {
+        ...authCookieOptions(),
+        maxAge: getTokenTtlSeconds() * 1000
+      });
       res.json({ message: "Signed in", user: serializeUser(user) });
     } catch (err) {
       console.error(err);

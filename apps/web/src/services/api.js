@@ -21,6 +21,7 @@ async function request(method, url, config = {}) {
         url,
         baseURL,
         timeout: 10000,
+        withCredentials: true,
         ...config
       });
 
