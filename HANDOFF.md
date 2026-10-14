@@ -6,8 +6,8 @@ Pick-up-cold status for the AI Candidate Management Platform. Update at every ph
 
 - **Current phase:** Phase 1 (not formally started)
 - **Branch:** `feature/candidate-management-setup`
-- **Open bugs:** 1 (see `docs/BUGS.md`)
-- **Open security findings:** 0 (SEC-007 `braces` is an Accepted dev-only risk; SEC-001 to SEC-006 fixed; see `docs/SECURITY.md`)
+- **Open bugs:** 0 (BUG-001 fixed; see `docs/BUGS.md`)
+- **Open security findings:** 1 (SEC-008 Medium, mitigated: HTTP LLM host; SEC-007 `braces` is an Accepted dev-only risk; SEC-001 to SEC-006 fixed; see `docs/SECURITY.md`)
 
 ## Phases
 
@@ -23,9 +23,9 @@ Pick-up-cold status for the AI Candidate Management Platform. Update at every ph
 | Run (web + api) | `yarn dev` (web `http://localhost:4410`, API `http://localhost:4310/api`) |
 | Build | `yarn build` |
 | Seed MongoDB | `yarn seed` |
-| Test | None yet |
+| Test | `yarn test` (12 API unit tests) |
 
-Env: `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_EXPIRES_SECONDS` to change; in production set `NODE_ENV=production` and `CLIENT_URL`); the API exits at startup without it. Copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. API uses an in-memory fallback if MongoDB is not configured.
+Env: one shared repo-root `.env` (copy `.env.example`) feeds the API and, for `VITE_*` only, the web app; AI keys are server-side only. `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_EXPIRES_SECONDS` to change; in production set `NODE_ENV=production` and `CLIENT_URL`); the API exits at startup without it. Copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. API uses an in-memory fallback if MongoDB is not configured.
 
 ## Git workflow
 
@@ -36,6 +36,8 @@ Env: `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_E
 
 | Date | Decision |
 |------|----------|
+| 2026-10-15 | Free-form assistant questions now answered by the Ollama model (`nemotron-3-nano:4b`) via `services/llm.js`, rules fallback; data-changing commands stay rule-based; `yarn test` added |
+| 2026-10-15 | Shared root `.env` (+ `.env.example`) with AI provider settings; loaded first by the API, `VITE_*`-only for the browser |
 | 2026-10-15 | Tokens shortened to 8h, CORS dev origins limited to non-production, `.vibecheck/` runtime data untracked and git-ignored |
 | 2026-10-15 | `helmet` and rate limiting added to the API; SEC-007 (`braces`, dev-only) accepted as known risk |
 | 2026-10-15 | Dependencies upgraded within current majors (express 4, mongoose 8, vite 6, vue 3); `shell-quote` pinned via root `resolutions` |
@@ -45,7 +47,8 @@ Env: `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_E
 ## Risks
 
 - Rate limits are per IP; set `trust proxy` before deploying behind a reverse proxy.
-- No automated tests; `api`, `shared` and `chat` builds are placeholder checks.
+- Test coverage is API-only; `api`, `shared` and `chat` builds are placeholder checks.
+- LLM host is plain HTTP (SEC-008).
 - `README.md` ports (3000/5173) differ from real dev ports (4310/4410).
 - JIRA key and base branch unconfirmed.
 
@@ -54,7 +57,7 @@ Env: `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_E
 0. Check git history for past secrets (not yet done); review staged `.vibecheck/` untracking before committing.
 1. Confirm JIRA key and base branch; update `CLAUDE.md` Project settings.
 2. Define Phase 1 scope and fill in the spec docs from the existing code.
-3. Add a test runner and baseline tests.
+3. Extend tests to web components and end-to-end flows.
 
 ## Change log
 

@@ -129,7 +129,7 @@ The API falls back to in-memory demo data when `MONGODB_URI` is not set or the c
 | Base branch | `main` (repo default; current work is on `feature/candidate-management-setup`; confirm before opening PRs) |
 | Install command | `yarn install` |
 | Build command | `yarn build` (builds `@acmp/shared`, `@acmp/chat`, `web`, `api`; the API/shared/chat builds are placeholder checks) |
-| Test command | _None yet. No test runner or test files exist; say so at the QA gate rather than skipping silently_ |
+| Test command | `yarn test` (Node's built-in `node --test`; API unit tests in `apps/api/test/`; no web or E2E tests yet, so say so at the QA gate rather than skipping silently) |
 | Run command | `yarn dev` (web + api); `yarn dev:web`, `yarn dev:api` for one side; `yarn seed` to seed MongoDB |
 
 If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record the answer here and in `HANDOFF.md`.
@@ -137,7 +137,8 @@ If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record th
 ### Ports and environment
 
 - Real dev ports are **API `4310`** and **web `4410`** (`apps/api/.env.example`, `apps/web/vite.config.js`). `README.md` still says 3000/5173; trust the code and fix the README when touching it.
-- Env files: copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. `.env` files are git-ignored; never commit them, print their values, or paste secrets into docs, commits or chat.
+- Env: one shared **repo-root `.env`** (copy from root `.env.example`) holds app settings and AI provider keys. The API loads `apps/api/.env` first, then the root `.env` (process env wins over both; loader: `apps/api/src/config/env.js`, imported first). Vite reads the root `.env` via `envDir` and exposes **only `VITE_*`** variables to the browser. `.env` files are git-ignored; never commit them, print their values, or paste secrets into docs, commits or chat.
+- **AI keys are server-side only.** Never prefix `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_*_KEY`, `COMPAT_KEYS` or `JWT_SECRET` with `VITE_`, never read them in `apps/web` or `packages/chat`, and never return them in API responses or logs. The web app calls AI features through the API.
 - API vars seen in the example: `PORT`, `CLIENT_URL`, `MONGODB_URI`. Web: `VITE_API_BASE_URL`. Check `apps/api/src/utils/jwt.js` and `utils/email.js` for further required vars (JWT secret, email transport) before relying on auth flows.
 
 ## Starting a session

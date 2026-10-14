@@ -4,6 +4,10 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
+  // Read the shared repo-root .env. Only VITE_-prefixed variables are exposed to browser code;
+  // AI keys and other secrets must never use that prefix.
+  envDir: fileURLToPath(new URL("../..", import.meta.url)),
+  envPrefix: "VITE_",
   resolve: {
     alias: {
       "@acmp/chat": fileURLToPath(

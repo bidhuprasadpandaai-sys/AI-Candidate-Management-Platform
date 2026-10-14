@@ -1,5 +1,5 @@
+import "./config/env.js";
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
@@ -11,9 +11,9 @@ import { Conversation } from "./models/Conversation.js";
 import { Message } from "./models/Message.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
+import { generateLlmReply } from "./services/llm.js";
 import { assertJwtSecret } from "./utils/jwt.js";
 
-dotenv.config();
 assertJwtSecret();
 
 const app = express();
@@ -671,6 +671,7 @@ app.post(
     const parsed = parseAiMessage(message, candidates);
     let reply = "";
     let actionExecuted = false;
+    let replySource = "rules";
 
     if (parsed) {
       actionExecuted = true;
@@ -719,10 +720,12 @@ app.post(
         actionExecuted = false;
       }
     } else {
-      reply = generateAiReply(message, candidates);
+      const llm = await generateLlmReply({ message, candidates });
+      reply = llm ? llm.reply : generateAiReply(message, candidates);
+      replySource = llm ? llm.source : "rules";
     }
 
-    response.json({ reply, actionExecuted, usingMemoryStore: !usingDatabase });
+    response.json({ reply, actionExecuted, source: replySource, usingMemoryStore: !usingDatabase });
   })
 );
 

@@ -21,15 +21,17 @@ _TBD (models: User, Candidate, Conversation, Message)_
 
 ## 4. APIs
 
-_TBD (list verified routes from `apps/api/src/index.js` and `routes/auth.js`)_
+Public: `GET /api`, `/api/health`, `/api/modules`; `/api/auth/*` (signup, signin, verify, request-reset, reset, reset-password, profile, change-password, me, logout). Everything else under `/api` requires a signed-in user (cookie `auth_token` or Bearer token): dashboard, candidates (CRUD), conversations and messages, `POST /api/chat`, analytics, `POST /api/seed` (disabled in production).
+
+`POST /api/chat`: data-changing commands (status, notes, interviews) are parsed by rules in `@acmp/shared`. Free-form questions go to the LLM when `LLM_PROVIDER=ollama` (`apps/api/src/services/llm.js`, OpenAI-compatible `/v1/chat/completions`), falling back to the rule-based reply on any failure. Response includes `source: "llm" | "rules"`. The prompt carries only name, role, status, score, experience and skills.
 
 ## 5. Configuration
 
-_TBD (env vars: see `apps/api/.env.example`, `apps/web/.env.example`)_
+Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRET`, AI provider keys. Browser-visible: `VITE_*` only. LLM: `LLM_PROVIDER` (`rules` or `ollama`), `OLLAMA_HOST`, `OLLAMA_MODEL`, `LLM_MODEL`, `OLLAMA_API_KEY`, `LLM_TIMEOUT_MS`.
 
 ## 6. Testing strategy
 
-_TBD (no tests exist yet)_
+`yarn test` runs Node's built-in test runner over `apps/api/test/` (LLM service, JWT, auth middleware; 12 tests). No web component or end-to-end tests yet.
 
 ## 7. Non-functional requirements
 

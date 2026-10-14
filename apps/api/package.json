@@ -7,7 +7,8 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "build": "node -e \"console.log('API build check passed')\"",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
     "@acmp/shared": "1.0.0",
