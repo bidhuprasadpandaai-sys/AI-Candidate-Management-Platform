@@ -18,5 +18,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "resolutions": {
+    "shell-quote": "^1.12.0"
+  },
+  "packageManager": "yarn@4.14.1"
 }

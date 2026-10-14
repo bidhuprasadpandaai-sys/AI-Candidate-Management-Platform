@@ -137,3 +137,8 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# VibeCheck runtime data (generated locally, may contain prompts, paths or audit logs)
+.vibecheck/provenance/
+.vibecheck/isl-studio/
+.vibecheck/sync-queue.json

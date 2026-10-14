@@ -1,0 +1,63 @@
+# HANDOFF
+
+Pick-up-cold status for the AI Candidate Management Platform. Update at every phase close and on significant decisions.
+
+## Status
+
+- **Current phase:** Phase 1 (not formally started)
+- **Branch:** `feature/candidate-management-setup`
+- **Open bugs:** 1 (see `docs/BUGS.md`)
+- **Open security findings:** 0 (SEC-007 `braces` is an Accepted dev-only risk; SEC-001 to SEC-006 fixed; see `docs/SECURITY.md`)
+
+## Phases
+
+| Phase | Scope | Status | QA | Product | Architecture | Review | Security |
+|-------|-------|--------|----|---------|--------------|--------|----------|
+| 1 | _TBD_ | In progress | - | - | - | - | Re-run: pass, no open findings (see `docs/SECURITY.md`) |
+
+## Build / run / test
+
+| Action | Command |
+|--------|---------|
+| Install | `yarn install` |
+| Run (web + api) | `yarn dev` (web `http://localhost:4410`, API `http://localhost:4310/api`) |
+| Build | `yarn build` |
+| Seed MongoDB | `yarn seed` |
+| Test | None yet |
+
+Env: `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_EXPIRES_SECONDS` to change; in production set `NODE_ENV=production` and `CLIENT_URL`); the API exits at startup without it. Copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. API uses an in-memory fallback if MongoDB is not configured.
+
+## Git workflow
+
+- Branch: `<JIRA-KEY>-<short-kebab-description>`; JIRA key _TBD_; base branch `main` (confirm).
+- Ticket number in commits and PR titles. Commit/push/PR only when asked.
+
+## Decisions
+
+| Date | Decision |
+|------|----------|
+| 2026-10-15 | Tokens shortened to 8h, CORS dev origins limited to non-production, `.vibecheck/` runtime data untracked and git-ignored |
+| 2026-10-15 | `helmet` and rate limiting added to the API; SEC-007 (`braces`, dev-only) accepted as known risk |
+| 2026-10-15 | Dependencies upgraded within current majors (express 4, mongoose 8, vite 6, vue 3); `shell-quote` pinned via root `resolutions` |
+| 2026-10-15 | All `/api` routes except health, modules and auth now require a signed-in user; JWT secret has no fallback |
+| 2026-10-14 | Project rules recorded in `CLAUDE.md`; spec docs and bug log created as skeletons |
+
+## Risks
+
+- Rate limits are per IP; set `trust proxy` before deploying behind a reverse proxy.
+- No automated tests; `api`, `shared` and `chat` builds are placeholder checks.
+- `README.md` ports (3000/5173) differ from real dev ports (4310/4410).
+- JIRA key and base branch unconfirmed.
+
+## Next steps
+
+0. Check git history for past secrets (not yet done); review staged `.vibecheck/` untracking before committing.
+1. Confirm JIRA key and base branch; update `CLAUDE.md` Project settings.
+2. Define Phase 1 scope and fill in the spec docs from the existing code.
+3. Add a test runner and baseline tests.
+
+## Change log
+
+| Date | Change |
+|------|--------|
+| 2026-10-14 | Created |

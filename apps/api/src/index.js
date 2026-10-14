@@ -1,24 +1,36 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import { buildDashboardMetrics, generateAiReply, parseAiMessage } from "@acmp/shared";
 import { connectDB } from "./config/db.js";
 import { seedCandidates } from "./data/seedCandidates.js";
 import { Candidate } from "./models/Candidate.js";
 import { Conversation } from "./models/Conversation.js";
 import { Message } from "./models/Message.js";
+import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
+import { assertJwtSecret } from "./utils/jwt.js";
 
 dotenv.config();
+assertJwtSecret();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const allowedOrigins = [
-  process.env.CLIENT_URL,
+const isProduction = process.env.NODE_ENV === "production";
+if (isProduction && !process.env.CLIENT_URL) {
+  throw new Error("CLIENT_URL must be set in production (it is the only allowed CORS origin)");
+}
+const devOrigins = [
   "http://localhost:4410",
   "http://127.0.0.1:4410",
   "http://localhost:5173",
   "http://127.0.0.1:5173"
+];
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  ...(isProduction ? [] : devOrigins)
 ].filter(Boolean);
 const moduleManifest = [
   {
@@ -58,6 +70,23 @@ const moduleManifest = [
   }
 ];
 
+const rateLimitResponse = { error: "Too many requests, please try again later" };
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 600,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: rateLimitResponse
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: rateLimitResponse
+});
+
+app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
@@ -72,6 +101,19 @@ app.use(
   })
 );
 app.use(express.json());
+app.use("/api", apiLimiter);
+// Brute-force protection for credential endpoints (not /me or /logout).
+app.use(
+  [
+    "/api/auth/signup",
+    "/api/auth/signin",
+    "/api/auth/request-reset",
+    "/api/auth/reset",
+    "/api/auth/reset-password",
+    "/api/auth/change-password"
+  ],
+  authLimiter
+);
 app.use("/api/auth", authRouter);
 
 const usingDatabase = await connectDB();
@@ -309,6 +351,9 @@ app.get("/api/health", (_request, response) => {
 app.get("/api/modules", (_request, response) => {
   response.json({ modules: moduleManifest });
 });
+
+// Everything below this line requires a signed-in user.
+app.use("/api", requireAuth);
 
 app.get(
   "/api/dashboard",
@@ -749,6 +794,11 @@ app.get(
 app.post(
   "/api/seed",
   asyncHandler(async (_request, response) => {
+    if (process.env.NODE_ENV === "production") {
+      response.status(403).json({ error: "Seeding is disabled in production" });
+      return;
+    }
+
     if (!usingDatabase) {
       memoryCandidates = seedCandidates.map((candidate, index) => ({
         id: `demo-${index + 1}`,

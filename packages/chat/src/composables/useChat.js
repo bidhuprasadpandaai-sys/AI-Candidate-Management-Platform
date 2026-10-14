@@ -5,7 +5,8 @@ import { generateCandidateReply } from "../utils/chatHelpers.js";
 function createClient(apiBase) {
   return axios.create({
     baseURL: apiBase,
-    timeout: 10000
+    timeout: 10000,
+    withCredentials: true
   });
 }
 
