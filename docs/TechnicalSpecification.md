@@ -17,7 +17,12 @@
 
 ## 3. Data model
 
-_TBD (models: User, Candidate, Conversation, Message)_
+Mongoose models in `apps/api/src/models/` (the in-memory store mirrors the Candidate shape):
+
+- **User:** email (unique, lowercase), passwordHash (`scrypt:salt:hash`), name, role, phone, profilePic, socialLinks {facebook, twitter}, isVerified, verification and reset tokens with expiry, timestamps.
+- **Candidate:** name, email (unique), role, status (`screening|interview|offer|hired|rejected`), score 0-100, stage, location, experienceYears, skills[], summary, notes[{author, text, createdAt}], interviews[{title, date, time, interviewer, type}], timestamps.
+- **Conversation:** type (`individual|group`), candidateIds[], title, timestamps.
+- **Message:** conversationId (indexed), sender (`recruiter|candidate`), senderName, text, attachments[{name, type, size, content}], createdAt.
 
 ## 4. APIs
 
@@ -31,7 +36,14 @@ Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRE
 
 ## 6. Testing strategy
 
-`yarn test` runs Node's built-in test runner over `apps/api/test/` (LLM service, JWT, auth middleware; 12 tests). No web component or end-to-end tests yet.
+| Layer | Tool | Command | What it covers |
+|-------|------|---------|----------------|
+| API unit | Node `node --test` | `yarn workspace api test` | LLM service (config, prompt privacy, fallback, logging), JWT, auth middleware |
+| API end-to-end | Node `node --test` | `yarn workspace api test` (`apps/api/test/e2e.test.js`) | Real server in in-memory mode plus a fake Ollama: public/protected routes, sign-up/sign-in/me/logout, candidate CRUD, assistant LLM and rule paths, security headers, rate limit |
+| Web component | Vitest + Vue Test Utils + jsdom | `yarn workspace web test` | Pinia candidates store, DashboardCards, AppHeader, AIAssistantPanel, SignIn view |
+| UI end-to-end | Playwright (system Chrome) | `yarn test:e2e` | Redirect to sign-in, wrong password, full recruiter flow (sign in, overview, candidates, assistant), HttpOnly session cookie. Starts its own servers on ports 4311/4411 |
+
+`yarn test` runs the API and web suites. `yarn test:e2e` is separate because it launches Chrome. Not yet covered: SignUp/ResetPassword views, CandidateList and detail sidebar, chat module, analytics, MongoDB mode, accessibility.
 
 ## 7. Non-functional requirements
 

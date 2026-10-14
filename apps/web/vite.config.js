@@ -15,6 +15,11 @@ export default defineConfig({
       )
     }
   },
+  test: {
+    environment: "jsdom",
+    include: ["src/**/*.test.js"],
+    restoreMocks: true
+  },
   server: {
     port: 4410,
     host: "0.0.0.0",

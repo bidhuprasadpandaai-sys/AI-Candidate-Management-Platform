@@ -129,7 +129,7 @@ The API falls back to in-memory demo data when `MONGODB_URI` is not set or the c
 | Base branch | `main` (repo default; current work is on `feature/candidate-management-setup`; confirm before opening PRs) |
 | Install command | `yarn install` |
 | Build command | `yarn build` (builds `@acmp/shared`, `@acmp/chat`, `web`, `api`; the API/shared/chat builds are placeholder checks) |
-| Test command | `yarn test` (Node's built-in `node --test`; API unit tests in `apps/api/test/`; no web or E2E tests yet, so say so at the QA gate rather than skipping silently) |
+| Test command | `yarn test` (API unit and end-to-end tests with `node --test`, web component tests with Vitest); `yarn test:e2e` (Playwright UI end-to-end, uses system Chrome, own ports 4311/4411) |
 | Run command | `yarn dev` (web + api); `yarn dev:web`, `yarn dev:api` for one side; `yarn seed` to seed MongoDB |
 
 If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record the answer here and in `HANDOFF.md`.
