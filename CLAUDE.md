@@ -160,6 +160,7 @@ If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record th
 | `docs/Design.md` | Design principles, UI/UX, detailed component design, error handling | At every phase close |
 | `docs/BUGS.md` | Running bug log; the guide for QA | As soon as a bug is found, and when its status changes |
 | `docs/SECURITY.md` | Security findings and vulnerabilities, scan results, Security gate runs | As soon as a finding is made, and when its status changes |
+| `docs/Roadmap.md` | Phased feature plan and the AI efficiency principles every AI feature must follow | When scope, order or open decisions change; at every phase close |
 
 Docs describe what was actually built, not what was planned. Add an entry to each doc's change log at every update.
 
@@ -197,6 +198,8 @@ A phase is **not complete** until all of the following are done:
 
 ## Code conventions
 
+- **AI features** follow the principles in `docs/Roadmap.md` section 1 (deterministic first, cache results, smallest model that passes its eval, minimum context and redacted PII, structured output, one server-side AI gateway, budgets, human confirmation before any change).
+
 - ESM everywhere (`"type": "module"`); use `import`/`export`, include the `.js` extension on relative imports in `apps/api` and packages.
 - Match surrounding style: double quotes, semicolons, 2-space indent, Vue 3 SFCs, Pinia stores, PrimeVue 3 components (not v4 APIs).
 - Put logic shared by API and web in `packages/shared`; reusable chat UI in `packages/chat`. Don't duplicate it in the apps.
@@ -214,7 +217,7 @@ These must exist and stay current. Create them from the skeletons only if missin
 - `HANDOFF.md` (handoff document)
 - `docs/FunctionalSpecification.md` (functional document)
 - `docs/Design.md` (design document)
-- Also kept: `docs/TechnicalSpecification.md`, `docs/Architecture.md`, `docs/BUGS.md`, `docs/SECURITY.md` (security findings and gate runs)
+- Also kept: `docs/TechnicalSpecification.md`, `docs/Architecture.md`, `docs/BUGS.md`, `docs/SECURITY.md`, `docs/Roadmap.md` (security findings and gate runs)
 
 ## Quality gates
 

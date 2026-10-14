@@ -6,10 +6,12 @@ import http from "node:http";
 import net from "node:net";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { fakeSmtpServer } from "./helpers/fakeSmtp.js";
 
 const apiDir = fileURLToPath(new URL("..", import.meta.url));
 let server;
 let fakeOllama;
+let fakeSmtp;
 let base;
 let cookie = "";
 const llmRequests = [];
@@ -48,6 +50,8 @@ before(async () => {
   });
   await new Promise((resolve) => fakeOllama.listen(llmPort, "127.0.0.1", resolve));
 
+  fakeSmtp = await fakeSmtpServer();
+
   const port = await freePort();
   base = `http://127.0.0.1:${port}/api`;
   server = spawn(process.execPath, ["src/index.js"], {
@@ -62,7 +66,11 @@ before(async () => {
       LLM_PROVIDER: "ollama",
       OLLAMA_HOST: `http://127.0.0.1:${llmPort}`,
       OLLAMA_MODEL: "fake-model",
-      OLLAMA_API_KEY: ""
+      OLLAMA_API_KEY: "",
+      EMAIL_PROVIDER: "smtp",
+      SMTP_HOST: "127.0.0.1",
+      SMTP_PORT: String(fakeSmtp.port),
+      EMAIL_FROM: "TalentOS <no-reply@example.com>"
     },
     stdio: "ignore"
   });
@@ -78,6 +86,7 @@ before(async () => {
 
 after(async () => {
   server?.kill();
+  fakeSmtp?.server.close();
   await new Promise((resolve) => (fakeOllama ? fakeOllama.close(resolve) : resolve()));
 });
 
@@ -229,6 +238,32 @@ test("logout clears the cookie", async () => {
   const { res } = await call("POST", "/auth/logout");
   assert.equal(res.status, 200);
   assert.match(res.headers.get("set-cookie") || "", /auth_token=;/);
+});
+
+
+test("password reset sends a real email, the link works once, and unknown emails look the same", async () => {
+  const user = { name: "Reset User", email: "reset-user@example.com", password: "Strong123" };
+  assert.equal((await call("POST", "/auth/signup", user, { auth: false })).res.status, 201);
+
+  fakeSmtp.received.data = "";
+  const known = await call("POST", "/auth/request-reset", { email: user.email }, { auth: false });
+  const unknown = await call("POST", "/auth/request-reset", { email: "nobody-here@example.com" }, { auth: false });
+  assert.equal(known.res.status, 200);
+  assert.equal(unknown.res.status, 200);
+  assert.deepEqual(known.data, unknown.data, "response must not reveal whether the address exists");
+
+  for (let i = 0; i < 20 && !fakeSmtp.received.data; i += 1) await new Promise((r) => setTimeout(r, 100));
+  const mail = fakeSmtp.received.data.replace(/=\r?\n/g, "").replace(/=3D/g, "=");
+  assert.ok(mail.includes("Subject: Password Reset"));
+  assert.ok(mail.includes("To: reset-user@example.com"));
+  const token = mail.match(/resetpassword\?token=([a-f0-9]{64})/)?.[1];
+  assert.ok(token, "reset link with a 64-hex token is in the email");
+
+  const reset = await call("POST", "/auth/reset", { token, newPassword: "Another123" }, { auth: false });
+  assert.equal(reset.res.status, 200);
+  assert.equal((await call("POST", "/auth/reset", { token, newPassword: "Third1234" }, { auth: false })).res.status, 400, "token is single-use");
+  assert.equal((await call("POST", "/auth/signin", { email: user.email, password: "Strong123" }, { auth: false })).res.status, 401);
+  assert.equal((await call("POST", "/auth/signin", { email: user.email, password: "Another123" }, { auth: false })).res.status, 200);
 });
 
 test("rate limit: repeated bad sign-ins are throttled", async () => {

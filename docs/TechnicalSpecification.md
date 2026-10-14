@@ -34,18 +34,18 @@ Candidate `POST`/`PUT` bodies are validated and whitelisted by `utils/candidateV
 
 ## 5. Configuration
 
-Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRET`, AI provider keys. Browser-visible: `VITE_*` only. Email: `EMAIL_DEBUG_LOG` (dev only, prints full email bodies). LLM: `LLM_PROVIDER` (`rules` or `ollama`), `OLLAMA_HOST`, `OLLAMA_MODEL`, `LLM_MODEL`, `OLLAMA_API_KEY`, `LLM_TIMEOUT_MS`.
+Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRET`, AI provider keys. Browser-visible: `VITE_*` only. Email: `EMAIL_PROVIDER` (`console` default or `smtp`), `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_DEBUG_LOG` (dev only, prints full bodies); the API refuses to start if `smtp` is selected without host and from. LLM: `LLM_PROVIDER` (`rules` or `ollama`), `OLLAMA_HOST`, `OLLAMA_MODEL`, `LLM_MODEL`, `OLLAMA_API_KEY`, `LLM_TIMEOUT_MS`.
 
 ## 6. Testing strategy
 
 | Layer | Tool | Command | What it covers |
 |-------|------|---------|----------------|
-| API unit | Node `node --test` | `yarn workspace api test` | LLM service (config, prompt privacy, fallback, logging), JWT, auth middleware, candidate input validation, email logging |
-| API end-to-end | Node `node --test` | `yarn workspace api test` (`apps/api/test/e2e.test.js`) | Real server in in-memory mode plus a fake Ollama: public/protected routes, sign-up/sign-in/me/logout, candidate CRUD and input validation (400/409), assistant LLM and rule paths, security headers, rate limit |
+| API unit | Node `node --test` | `yarn workspace api test` | LLM service (config, prompt privacy, fallback, logging), JWT, auth middleware, candidate input validation, email provider and logging (fake SMTP server) |
+| API end-to-end | Node `node --test` | `yarn workspace api test` (`apps/api/test/e2e.test.js`) | Real server in in-memory mode plus a fake Ollama: public/protected routes, sign-up/sign-in/me/logout, password reset by email through a fake SMTP server, candidate CRUD and input validation (400/409), assistant LLM and rule paths, security headers, rate limit |
 | Web component | Vitest + Vue Test Utils + jsdom | `yarn workspace web test` | Pinia candidates store, DashboardCards, AppHeader, AIAssistantPanel, SignIn view |
 | UI end-to-end | Playwright (system Chrome) | `yarn test:e2e` | Redirect to sign-in, wrong password, full recruiter flow (sign in, overview, candidates, assistant), add-candidate form with valid and invalid input, HttpOnly session cookie. Starts its own servers on ports 4311/4411 |
 
-`yarn test` runs the API (37 tests) and web (16 tests) suites; `yarn test:e2e` runs 6 UI tests. `yarn test:e2e` is separate because it launches Chrome. Not yet covered: SignUp/ResetPassword views, CandidateList and detail sidebar, chat module, analytics, MongoDB mode, accessibility.
+`yarn test` runs the API (42 tests) and web (16 tests) suites; `yarn test:e2e` runs 6 UI tests. `yarn test:e2e` is separate because it launches Chrome. Not yet covered: SignUp/ResetPassword views, CandidateList and detail sidebar, chat module, analytics, MongoDB mode, accessibility.
 
 ## 7. Non-functional requirements
 

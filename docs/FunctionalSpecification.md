@@ -6,7 +6,7 @@ What the system does, as built (2026-10-15). Product name in the UI: **TalentOS*
 
 An AI-assisted recruiting workspace. A recruiter signs in, reviews a candidate pipeline, manages candidate records, chats with candidates, gets analytics, and asks an AI assistant questions about the pipeline.
 
-In scope: authentication and profile, candidate pipeline management, candidate conversations, analytics, AI assistant. Out of scope today: real email delivery (account and reset emails, candidate emails), calendar integration, role-based permissions, resume upload and parsing, multi-tenant organisations.
+In scope: authentication and profile, candidate pipeline management, candidate conversations, analytics, AI assistant. Out of scope today: candidate-facing emails, calendar integration, role-based permissions, resume upload and parsing, multi-tenant organisations.
 
 ## 2. Users and roles
 
@@ -21,7 +21,7 @@ In scope: authentication and profile, candidate pipeline management, candidate c
 |----|-------------|--------|
 | FR-1 | Sign up with name, valid email and a password of 8+ characters containing an uppercase letter and a number | Done |
 | FR-2 | Sign in and out; session lasts 8 hours (configurable) in an HttpOnly cookie | Done |
-| FR-3 | Password reset by token; change password while signed in | Done, but the email sender is a placeholder that prints the message to the API console; no real email is sent |
+| FR-3 | Password reset by emailed link (single-use token, 1 hour); change password while signed in; the response never reveals whether an address has an account | Done; real delivery needs `EMAIL_PROVIDER=smtp` and a provider account |
 | FR-4 | Optional email verification before sign-in (`REQUIRE_EMAIL_VERIFICATION=true`) | Done |
 | FR-5 | Edit own profile: name, phone, role, avatar, social links | Done |
 | FR-6 | Dashboard metrics: total candidates, shortlisted, hired, average score | Done |

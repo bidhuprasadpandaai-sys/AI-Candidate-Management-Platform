@@ -41,7 +41,7 @@ Module manifest: the API serves `/api/modules`; the web shell merges it with def
 |-------------|-----------|-------|
 | MongoDB | API → DB | Optional; Mongoose models; in-memory fallback |
 | Ollama (`nemotron-3-nano:4b`) | API → LLM host | Plain HTTP in the current setup (SEC-008); no key required |
-| Email | API → console | `utils/email.js` is a placeholder: it logs only a masked recipient and subject (full bodies only with `EMAIL_DEBUG_LOG=true` outside production); no provider is integrated |
+| Email | API → SMTP server | `utils/email.js` via `nodemailer`. `EMAIL_PROVIDER=smtp` sends through any SMTP service (Brevo, Resend, Mailgun, SES SMTP, Mailpit locally); default `console` sends nothing and logs a masked line. Bodies and recipients are never logged; remote servers require TLS |
 | Anthropic, OpenAI, Gemini | not implemented | Variables are reserved in `.env.example` |
 
 ## 5. Deployment

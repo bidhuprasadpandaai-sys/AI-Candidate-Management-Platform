@@ -13,9 +13,11 @@ import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
 import { generateLlmReply } from "./services/llm.js";
 import { validateCandidateInput } from "./utils/candidateValidation.js";
+import { assertEmailConfig } from "./utils/email.js";
 import { assertJwtSecret } from "./utils/jwt.js";
 
 assertJwtSecret();
+assertEmailConfig();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
