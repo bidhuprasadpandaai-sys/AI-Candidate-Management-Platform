@@ -6,8 +6,8 @@ Pick-up-cold status for the AI Candidate Management Platform. Update at every ph
 
 - **Current phase:** Phase 1 (not formally started)
 - **Branch:** `feature/candidate-management-setup`
-- **Open bugs:** 1 (BUG-002 memory store accepts unvalidated candidate fields; see `docs/BUGS.md`)
-- **Open security findings:** 2 (SEC-008 Medium mitigated: HTTP LLM host; SEC-009 Low: email placeholder logs reset links); SEC-007 `braces` Accepted; SEC-001 to SEC-006 fixed (see `docs/SECURITY.md`)
+- **Open bugs:** 0 (BUG-001 and BUG-002 fixed; see `docs/BUGS.md`)
+- **Open security findings:** 1 (SEC-008 Medium, mitigated: HTTP LLM host); SEC-007 `braces` Accepted; SEC-001 to SEC-006 and SEC-009 fixed (see `docs/SECURITY.md`)
 
 ## Phases
 
@@ -23,7 +23,7 @@ Pick-up-cold status for the AI Candidate Management Platform. Update at every ph
 | Run (web + api) | `yarn dev` (web `http://localhost:4410`, API `http://localhost:4310/api`) |
 | Build | `yarn build` |
 | Seed MongoDB | `yarn seed` |
-| Test | `yarn test` (23 API tests incl. end-to-end, 16 web component tests); `yarn test:e2e` (4 Playwright UI tests, system Chrome, ports 4311/4411) |
+| Test | `yarn test` (37 API tests incl. end-to-end, 16 web component tests); `yarn test:e2e` (6 Playwright UI tests, system Chrome, ports 4311/4411) |
 
 Env: one shared repo-root `.env` (copy `.env.example`) feeds the API and, for `VITE_*` only, the web app; AI keys are server-side only. `JWT_SECRET` (32+ chars) is now required (tokens last 8h by default, `JWT_EXPIRES_SECONDS` to change; in production set `NODE_ENV=production` and `CLIENT_URL`); the API exits at startup without it. Copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. API uses an in-memory fallback if MongoDB is not configured.
 
@@ -36,6 +36,7 @@ Env: one shared repo-root `.env` (copy `.env.example`) feeds the API and, for `V
 
 | Date | Decision |
 |------|----------|
+| 2026-10-15 | Candidate input validation (BUG-002) and safe email logging (SEC-009) |
 | 2026-10-15 | Added Vitest web tests, API end-to-end tests and Playwright UI end-to-end tests; Functional, Architecture and Design specs filled in from the code; BUG-002 and SEC-009 logged |
 | 2026-10-15 | Free-form assistant questions now answered by the Ollama model (`nemotron-3-nano:4b`) via `services/llm.js`, rules fallback; data-changing commands stay rule-based; `yarn test` added |
 | 2026-10-15 | Shared root `.env` (+ `.env.example`) with AI provider settings; loaded first by the API, `VITE_*`-only for the browser |
@@ -50,6 +51,7 @@ Env: one shared repo-root `.env` (copy `.env.example`) feeds the API and, for `V
 - Rate limits are per IP; set `trust proxy` before deploying behind a reverse proxy.
 - Test gaps: SignUp/ResetPassword views, candidate table and sidebar, chat module, analytics, MongoDB mode; `api`, `shared` and `chat` builds are placeholder checks.
 - LLM host is plain HTTP (SEC-008).
+- Reset and verification emails are not delivered (placeholder sender).
 - `README.md` ports (3000/5173) differ from real dev ports (4310/4410).
 - JIRA key and base branch unconfirmed.
 
@@ -58,7 +60,7 @@ Env: one shared repo-root `.env` (copy `.env.example`) feeds the API and, for `V
 0. Check git history for past secrets (not yet done); review staged `.vibecheck/` untracking before committing.
 1. Confirm JIRA key and base branch; update `CLAUDE.md` Project settings.
 2. Define Phase 1 scope (spec docs are now filled in from the code; review them with the product owner).
-3. Extend tests to the remaining gaps above; fix BUG-002; replace the email placeholder (SEC-009).
+3. Extend tests to the remaining gaps above; replace the email placeholder with a real provider.
 
 ## Change log
 

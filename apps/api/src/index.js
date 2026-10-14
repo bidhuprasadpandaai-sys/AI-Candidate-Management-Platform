@@ -12,6 +12,7 @@ import { Message } from "./models/Message.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
 import { generateLlmReply } from "./services/llm.js";
+import { validateCandidateInput } from "./utils/candidateValidation.js";
 import { assertJwtSecret } from "./utils/jwt.js";
 
 assertJwtSecret();
@@ -398,9 +399,17 @@ app.get(
 app.post(
   "/api/candidates",
   asyncHandler(async (request, response) => {
-    const candidateData = request.body;
+    const { value: candidateData, errors } = validateCandidateInput(request.body);
+    if (errors) {
+      response.status(400).json({ message: errors[0], errors });
+      return;
+    }
 
     if (!usingDatabase) {
+      if (memoryCandidates.some((c) => c.email?.toLowerCase() === candidateData.email)) {
+        response.status(409).json({ message: "A candidate with this email already exists" });
+        return;
+      }
       const newCand = {
         id: `demo-${Date.now()}`,
         notes: [],
@@ -412,9 +421,17 @@ app.post(
       return;
     }
 
-    const candidate = new Candidate(candidateData);
-    await candidate.save();
-    response.status(201).json(mapCandidate(candidate));
+    try {
+      const candidate = new Candidate(candidateData);
+      await candidate.save();
+      response.status(201).json(mapCandidate(candidate));
+    } catch (error) {
+      if (error?.code === 11000) {
+        response.status(409).json({ message: "A candidate with this email already exists" });
+        return;
+      }
+      throw error;
+    }
   })
 );
 
@@ -423,7 +440,11 @@ app.put(
   "/api/candidates/:id",
   asyncHandler(async (request, response) => {
     const id = request.params.id;
-    const updateData = request.body;
+    const { value: updateData, errors } = validateCandidateInput(request.body, { partial: true });
+    if (errors) {
+      response.status(400).json({ message: errors[0], errors });
+      return;
+    }
 
     if (!usingDatabase) {
       const idx = memoryCandidates.findIndex((c) => c.id === id);

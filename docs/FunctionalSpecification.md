@@ -26,7 +26,7 @@ In scope: authentication and profile, candidate pipeline management, candidate c
 | FR-5 | Edit own profile: name, phone, role, avatar, social links | Done |
 | FR-6 | Dashboard metrics: total candidates, shortlisted, hired, average score | Done |
 | FR-7 | Candidate list with search, status filter, sorting, pagination | Done |
-| FR-8 | Add, edit and delete candidates (name, email, role, location, status, stage, experience, skills, summary) | Done |
+| FR-8 | Add, edit and delete candidates (name, email, role, location, status, stage, experience, skills, summary); input is validated (required name, email and role, valid email, status from the fixed list, score 0-100) and duplicate emails are rejected | Done |
 | FR-9 | Candidate detail panel: skills, AI insight, interviews (schedule, list) and recruiter notes | Done |
 | FR-10 | Conversations with one or several candidates (individual or group), messages and attachments | Done |
 | FR-11 | Analytics: pipeline funnel, stage distribution, experience spread, top skills, top candidates, average score | Done |
@@ -51,6 +51,7 @@ In scope: authentication and profile, candidate pipeline management, candidate c
 - Status changes made through the assistant appear in the candidate list and dashboard without a manual reload.
 - The assistant never changes data from a free-form model answer.
 - With no database configured the app is fully usable with six demo candidates.
+- Invalid candidate data (missing fields, bad email or status, out-of-range score) is rejected with a clear message and nothing is saved; a duplicate email is rejected.
 - Contact details (email, phone) and notes are never sent to the AI model.
 
 Automated coverage of these criteria: see `docs/TechnicalSpecification.md` section 6.

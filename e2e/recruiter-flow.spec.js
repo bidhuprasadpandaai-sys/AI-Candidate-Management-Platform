@@ -57,3 +57,35 @@ test("session cookie is HttpOnly and not readable from the page", async ({ page,
   expect(auth?.httpOnly).toBe(true);
   expect(await page.evaluate(() => document.cookie)).not.toContain("auth_token");
 });
+
+test("recruiter adds a candidate through the form and it appears in the list", async ({ page }) => {
+  await page.goto("/signin");
+  await page.locator("#email").fill(user.email);
+  await page.locator("input[type=password]").fill(user.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: /Candidates/ }).first().click();
+
+  await page.getByRole("button", { name: "Add Candidate" }).click();
+  await page.locator("#c-name").fill("Playwright Candidate");
+  await page.locator("#c-email").fill("pw-candidate@example.com");
+  await page.locator("#c-role").fill("QA Lead");
+  await page.getByRole("button", { name: "Save Profile" }).click();
+
+  await expect(page.getByText("Playwright Candidate").first()).toBeVisible();
+});
+
+test("adding a candidate with an invalid email shows the server validation message", async ({ page }) => {
+  await page.goto("/signin");
+  await page.locator("#email").fill(user.email);
+  await page.locator("input[type=password]").fill(user.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: /Candidates/ }).first().click();
+
+  await page.getByRole("button", { name: "Add Candidate" }).click();
+  await page.locator("#c-name").fill("Bad Email");
+  await page.locator("#c-email").fill("not-an-email");
+  await page.locator("#c-role").fill("Dev");
+  await page.getByRole("button", { name: "Save Profile" }).click();
+
+  await expect(page.getByText("email must be a valid email address")).toBeVisible();
+});

@@ -172,6 +172,33 @@ test("candidate create, update and delete", async () => {
   assert.equal((await call("PUT", `/candidates/${id}`, { status: "offer" })).res.status, 404);
 });
 
+test("candidate input is validated and whitelisted (BUG-002)", async () => {
+  const empty = await call("POST", "/candidates", {});
+  assert.equal(empty.res.status, 400);
+  assert.ok(empty.data.errors.length >= 3);
+  assert.equal((await call("POST", "/candidates", { name: "A", email: "bad", role: "R" })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { name: "A", email: "a@example.com", role: "R", status: "boss" })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { name: "A", email: "a@example.com", role: "R", score: 500 })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { name: { $ne: "" }, email: "a@example.com", role: "R" })).res.status, 400);
+
+  const ok = await call("POST", "/candidates", { name: "Valid One", email: "Valid.One@Example.com", role: "Dev", isAdmin: true, id: "hijack" });
+  assert.equal(ok.res.status, 201);
+  assert.equal(ok.data.email, "valid.one@example.com");
+  assert.equal(ok.data.isAdmin, undefined);
+  assert.notEqual(ok.data.id, "hijack");
+
+  const dup = await call("POST", "/candidates", { name: "Valid Two", email: "valid.one@example.com", role: "Dev" });
+  assert.equal(dup.res.status, 409);
+
+  assert.equal((await call("PUT", `/candidates/${ok.data.id}`, { status: "boss" })).res.status, 400);
+  const upd = await call("PUT", `/candidates/${ok.data.id}`, { score: 55, isAdmin: true, id: "x" });
+  assert.equal(upd.res.status, 200);
+  assert.equal(upd.data.score, 55);
+  assert.equal(upd.data.isAdmin, undefined);
+  assert.equal(upd.data.id, ok.data.id);
+  await call("DELETE", `/candidates/${ok.data.id}`);
+});
+
 test("assistant: free-form question goes to the model without contact details", async () => {
   llmRequests.length = 0;
   const { res, data } = await call("POST", "/chat", { message: "Summarize the pipeline in one line" });

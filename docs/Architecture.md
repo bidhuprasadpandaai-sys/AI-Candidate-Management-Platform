@@ -21,7 +21,7 @@ Monorepo (Yarn 4 workspaces, ESM everywhere):
 
 | Component | Path | Responsibility |
 |-----------|------|----------------|
-| API | `apps/api` | Express app: `config/env.js` (env loading), `middleware/requireAuth.js`, `routes/auth.js`, route handlers in `index.js`, `services/llm.js`, Mongoose `models/` (User, Candidate, Conversation, Message), `utils/jwt.js`, `utils/email.js`, `seed.js` |
+| API | `apps/api` | Express app: `config/env.js` (env loading), `middleware/requireAuth.js`, `routes/auth.js`, route handlers in `index.js`, `services/llm.js`, `utils/candidateValidation.js`, Mongoose `models/` (User, Candidate, Conversation, Message), `utils/jwt.js`, `utils/email.js`, `seed.js` |
 | Web | `apps/web` | Vue shell (`App.vue`) with router and Pinia stores (`auth`, `candidates`); module components lazy-loaded through `microfrontends/registry.js` (Overview, Candidates, Chat, AI Assistant, Analytics, Profile); `services/api.js` axios client |
 | `@acmp/shared` | `packages/shared` | Pure logic used by API and web: status constants, dashboard metrics, candidate name lookup, `parseAiMessage` (command parser) and `generateAiReply` (rule-based answers) |
 | `@acmp/chat` | `packages/chat` | Reusable chat UI (`ChatPanel`, `MessageThread`, conversation list/modal) and `useChat` composable |
@@ -41,7 +41,7 @@ Module manifest: the API serves `/api/modules`; the web shell merges it with def
 |-------------|-----------|-------|
 | MongoDB | API → DB | Optional; Mongoose models; in-memory fallback |
 | Ollama (`nemotron-3-nano:4b`) | API → LLM host | Plain HTTP in the current setup (SEC-008); no key required |
-| Email | API → console | `utils/email.js` is a placeholder that logs the message (including verification and reset links) to the console; no provider is integrated |
+| Email | API → console | `utils/email.js` is a placeholder: it logs only a masked recipient and subject (full bodies only with `EMAIL_DEBUG_LOG=true` outside production); no provider is integrated |
 | Anthropic, OpenAI, Gemini | not implemented | Variables are reserved in `.env.example` |
 
 ## 5. Deployment
