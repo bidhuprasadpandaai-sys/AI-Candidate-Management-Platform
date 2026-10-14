@@ -13,7 +13,8 @@
     "build": "yarn workspace @acmp/shared build && yarn workspace @acmp/chat build && yarn workspace web build && yarn workspace api build",
     "seed": "yarn workspace api seed",
     "test": "yarn workspace api test && yarn workspace web test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "email:test": "yarn workspace api email:test"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

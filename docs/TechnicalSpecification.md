@@ -34,7 +34,7 @@ Candidate `POST`/`PUT` bodies are validated and whitelisted by `utils/candidateV
 
 ## 5. Configuration
 
-Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRET`, AI provider keys. Browser-visible: `VITE_*` only. Email: `EMAIL_PROVIDER` (`console` default or `smtp`), `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_DEBUG_LOG` (dev only, prints full bodies); the API refuses to start if `smtp` is selected without host and from. LLM: `LLM_PROVIDER` (`rules` or `ollama`), `OLLAMA_HOST`, `OLLAMA_MODEL`, `LLM_MODEL`, `OLLAMA_API_KEY`, `LLM_TIMEOUT_MS`.
+Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRET`, AI provider keys. Browser-visible: `VITE_*` only. Email: `EMAIL_PROVIDER` (`console` default, `smtp`, or `brevo` for Brevo's transactional HTTP API), `EMAIL_FROM`, `BREVO_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_DEBUG_LOG` (dev only, prints full bodies); the API refuses to start if `smtp` lacks host and from, or `brevo` lacks the key and a valid from. `yarn email:test you@example.com` sends one test message. LLM: `LLM_PROVIDER` (`rules` or `ollama`), `OLLAMA_HOST`, `OLLAMA_MODEL`, `LLM_MODEL`, `OLLAMA_API_KEY`, `LLM_TIMEOUT_MS`.
 
 ## 6. Testing strategy
 
@@ -45,7 +45,7 @@ Shared repo-root `.env` (template: `.env.example`). API-only secrets: `JWT_SECRE
 | Web component | Vitest + Vue Test Utils + jsdom | `yarn workspace web test` | Pinia candidates store, DashboardCards, AppHeader, AIAssistantPanel, SignIn view |
 | UI end-to-end | Playwright (system Chrome) | `yarn test:e2e` | Redirect to sign-in, wrong password, full recruiter flow (sign in, overview, candidates, assistant), add-candidate form with valid and invalid input, HttpOnly session cookie. Starts its own servers on ports 4311/4411 |
 
-`yarn test` runs the API (42 tests) and web (16 tests) suites; `yarn test:e2e` runs 6 UI tests. `yarn test:e2e` is separate because it launches Chrome. Not yet covered: SignUp/ResetPassword views, CandidateList and detail sidebar, chat module, analytics, MongoDB mode, accessibility.
+`yarn test` runs the API (45 tests) and web (16 tests) suites; `yarn test:e2e` runs 6 UI tests. `yarn test:e2e` is separate because it launches Chrome. Not yet covered: SignUp/ResetPassword views, CandidateList and detail sidebar, chat module, analytics, MongoDB mode, accessibility.
 
 ## 7. Non-functional requirements
 

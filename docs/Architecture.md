@@ -41,7 +41,7 @@ Module manifest: the API serves `/api/modules`; the web shell merges it with def
 |-------------|-----------|-------|
 | MongoDB | API → DB | Optional; Mongoose models; in-memory fallback |
 | Ollama (`nemotron-3-nano:4b`) | API → LLM host | Plain HTTP in the current setup (SEC-008); no key required |
-| Email | API → SMTP server | `utils/email.js` via `nodemailer`. `EMAIL_PROVIDER=smtp` sends through any SMTP service (Brevo, Resend, Mailgun, SES SMTP, Mailpit locally); default `console` sends nothing and logs a masked line. Bodies and recipients are never logged; remote servers require TLS |
+| Email | API → SMTP server or Brevo API | `utils/email.js`. `EMAIL_PROVIDER=smtp` sends through any SMTP service via `nodemailer` (Brevo, Resend, Mailgun, SES SMTP, Mailpit locally); `EMAIL_PROVIDER=brevo` posts to Brevo's transactional endpoint `/v3/smtp/email` over HTTPS (no SMTP port needed); default `console` sends nothing and logs a masked line. Bodies and recipients are never logged; remote servers require TLS |
 | Anthropic, OpenAI, Gemini | not implemented | Variables are reserved in `.env.example` |
 
 ## 5. Deployment

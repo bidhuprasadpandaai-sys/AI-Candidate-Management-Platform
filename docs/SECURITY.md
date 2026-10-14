@@ -23,7 +23,7 @@ AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KE
 
 ## Standing policy: email credentials
 
-`SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` live only in the git-ignored root `.env`, are read by the API only, and never carry the `VITE_` prefix. Message bodies (reset and verification links are credentials) and recipient addresses are never logged: logs hold a masked recipient and the subject only. Remote SMTP servers must upgrade to TLS (STARTTLS or port 465); only localhost may be plain. `sendEmail` never throws, so a delivery failure cannot reveal through a 500 whether an address has an account, and invalid recipients and newlines in subjects are rejected (header injection).
+`BREVO_API_KEY`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` live only in the git-ignored root `.env`, are read by the API only, and never carry the `VITE_` prefix. Message bodies (reset and verification links are credentials) and recipient addresses are never logged: logs hold a masked recipient and the subject only. The Brevo API provider only calls `https://api.brevo.com` (the URL override exists for tests) and sends the key in the `api-key` header, never in the URL or logs. Remote SMTP servers must upgrade to TLS (STARTTLS or port 465); only localhost may be plain. `sendEmail` never throws, so a delivery failure cannot reveal through a 500 whether an address has an account, and invalid recipients and newlines in subjects are rejected (header injection).
 
 ## Baseline scan (2026-10-15)
 
@@ -39,6 +39,7 @@ AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KE
 |------|-------|--------|-------|
 | 2026-10-15 | Baseline | Fail | 2 High, 1 Medium, 1 Low open |
 | 2026-10-15 | Re-run after LLM service added | Pass with note | Leak scan clean; no key names or `VITE_` secrets in web code; audit shows only SEC-007 (Accepted). Open: SEC-008 Medium (HTTP LLM host, mitigated) |
+| 2026-10-15 | Re-run after Brevo API provider added | Pass | Leak scan clean (no `xkeysib-`/`xsmtpsib-` keys); no Brevo or SMTP names in web code; audit shows only SEC-007 (Accepted); 45 API tests incl. fake Brevo API. Open: SEC-008 Medium (HTTP LLM host, mitigated) |
 | 2026-10-15 | Re-run after SMTP email provider added | Pass | Leak scan clean (no provider keys or SMTP values tracked); no `VITE_` or SMTP names in web code; audit shows only SEC-007 (Accepted); reset flow tested end to end through a fake SMTP server. Open: SEC-008 Medium (HTTP LLM host, mitigated) |
 | 2026-10-15 | Re-run after BUG-002 and SEC-009 fixes | Pass | Leak scan clean; audit shows only SEC-007 (Accepted); no secrets or reset links in logs; candidate input validated. Open: SEC-008 Medium (HTTP LLM host, mitigated) |
 | 2026-10-15 | Git history scan | Pass | 4 commits, 0 secret-pattern matches, no real `.env` ever committed |
@@ -62,3 +63,4 @@ AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KE
 | 2026-10-15 | SEC-009 added (email placeholder logs reset links) |
 | 2026-10-15 | SEC-009 fixed and verified |
 | 2026-10-15 | SMTP email provider added; email credential policy |
+| 2026-10-15 | Brevo API email provider added |

@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "build": "node -e \"console.log('API build check passed')\"",
     "seed": "node src/seed.js",
+    "email:test": "node scripts/sendTestEmail.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {

@@ -97,3 +97,66 @@ test("rejects invalid recipients and strips newlines from the subject (header in
   assert.equal(await sendEmail("ada@example.com", "Hi\r\nBcc: evil@example.com", body, { env, transport }), true);
   assert.equal(sent.subject.includes("\n"), false);
 });
+
+// ── Brevo API provider ────────────────────────────────────────────────────────
+import http from "node:http";
+import { parseFrom } from "../src/utils/email.js";
+
+function fakeBrevoApi(status = 201) {
+  const received = { headers: null, body: null };
+  const server = http.createServer((req, res) => {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      received.headers = req.headers;
+      received.body = JSON.parse(raw || "{}");
+      res.statusCode = status;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ messageId: "<fake@brevo>" }));
+    });
+  });
+  return new Promise((resolve) =>
+    server.listen(0, "127.0.0.1", () => resolve({ server, received, url: `http://127.0.0.1:${server.address().port}/v3/smtp/email` }))
+  );
+}
+
+test("brevo config: requires API key and a valid EMAIL_FROM", () => {
+  assert.throws(() => assertEmailConfig({ EMAIL_PROVIDER: "brevo" }), /BREVO_API_KEY and EMAIL_FROM/);
+  assert.throws(() => assertEmailConfig({ EMAIL_PROVIDER: "brevo", BREVO_API_KEY: "k", EMAIL_FROM: "not an address" }), /EMAIL_FROM must look like/);
+  assert.doesNotThrow(() => assertEmailConfig({ EMAIL_PROVIDER: "brevo", BREVO_API_KEY: "k", EMAIL_FROM: "TalentOS <no-reply@example.com>" }));
+  assert.deepEqual(parseFrom("TalentOS <no-reply@example.com>"), { name: "TalentOS", email: "no-reply@example.com" });
+  assert.deepEqual(parseFrom("no-reply@example.com"), { email: "no-reply@example.com" });
+});
+
+test("brevo: posts the transactional payload with the api-key header", async () => {
+  const { server, received, url } = await fakeBrevoApi(201);
+  try {
+    mock.method(console, "log", () => {});
+    const env = { EMAIL_PROVIDER: "brevo", BREVO_API_KEY: "test-api-key", BREVO_API_URL: url, EMAIL_FROM: "TalentOS <no-reply@example.com>" };
+    assert.equal(await sendEmail("ada@example.com", "Password Reset", body, { env }), true);
+    assert.equal(received.headers["api-key"], "test-api-key");
+    assert.deepEqual(received.body.sender, { name: "TalentOS", email: "no-reply@example.com" });
+    assert.deepEqual(received.body.to, [{ email: "ada@example.com" }]);
+    assert.equal(received.body.subject, "Password Reset");
+    assert.ok(received.body.htmlContent.includes("SECRET123"));
+    assert.ok(received.body.textContent.includes("SECRET123"));
+  } finally {
+    server.close();
+  }
+});
+
+test("brevo: API errors and network failures return false and log no secrets", async () => {
+  const lines = [];
+  mock.method(console, "warn", (...args) => lines.push(args.join(" ")));
+  const { server, url } = await fakeBrevoApi(401);
+  try {
+    const base = { EMAIL_PROVIDER: "brevo", BREVO_API_KEY: "test-api-key", EMAIL_FROM: "a@b.co" };
+    assert.equal(await sendEmail("ada@example.com", "S", body, { env: { ...base, BREVO_API_URL: url } }), false);
+    assert.equal(await sendEmail("ada@example.com", "S", body, { env: { ...base, BREVO_API_URL: "http://127.0.0.1:1/x" } }), false);
+  } finally {
+    server.close();
+  }
+  const out = lines.join("\n");
+  assert.ok(out.includes("Brevo HTTP 401"));
+  assert.equal(/test-api-key|SECRET123|ada@example\.com/.test(out), false);
+});

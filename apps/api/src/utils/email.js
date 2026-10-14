@@ -3,6 +3,8 @@ import nodemailer from "nodemailer";
 // Email sender. EMAIL_PROVIDER selects the transport:
 //   console (default): nothing is sent; only a masked recipient and the subject are logged.
 //   smtp: sends through any SMTP server (Brevo, Resend, Mailgun, SES SMTP, Mailpit, ...).
+//   brevo: sends through Brevo's transactional HTTP API (api.brevo.com/v3/smtp/email) with an
+//          API key. Useful when outbound SMTP ports are blocked.
 // Message bodies contain verification and password-reset links, which are credentials,
 // so they are never logged by default. In development only, set EMAIL_DEBUG_LOG=true
 // to print the full message.
@@ -22,6 +24,8 @@ export function getEmailConfig(env = process.env) {
     user: String(env.SMTP_USER || "").trim(),
     pass: String(env.SMTP_PASS || ""),
     from: String(env.EMAIL_FROM || "").trim(),
+    brevoApiKey: String(env.BREVO_API_KEY || "").trim(),
+    brevoApiUrl: String(env.BREVO_API_URL || "https://api.brevo.com/v3/smtp/email").trim(),
     debug: env.EMAIL_DEBUG_LOG === "true" && env.NODE_ENV !== "production"
   };
 }
@@ -35,8 +39,15 @@ export function assertEmailConfig(env = process.env) {
     }
     return;
   }
+  if (config.provider === "brevo") {
+    if (!config.brevoApiKey || !config.from) {
+      throw new Error("EMAIL_PROVIDER=brevo requires BREVO_API_KEY and EMAIL_FROM (see .env.example)");
+    }
+    parseFrom(config.from);
+    return;
+  }
   if (config.provider !== "smtp") {
-    throw new Error(`EMAIL_PROVIDER must be "console" or "smtp" (got "${config.provider}")`);
+    throw new Error(`EMAIL_PROVIDER must be "console", "smtp" or "brevo" (got "${config.provider}")`);
   }
   if (!config.host || !config.from) {
     throw new Error("EMAIL_PROVIDER=smtp requires SMTP_HOST and EMAIL_FROM (see .env.example)");
@@ -44,6 +55,15 @@ export function assertEmailConfig(env = process.env) {
   if (Boolean(config.user) !== Boolean(config.pass)) {
     throw new Error("SMTP_USER and SMTP_PASS must be set together");
   }
+}
+
+// "TalentOS <no-reply@example.com>" or "no-reply@example.com" -> { name, email }
+export function parseFrom(from) {
+  const match = String(from).match(/^\s*(?:"?([^"<]*?)"?\s*)?<([^<>\s]+@[^<>\s]+)>\s*$/) || String(from).match(/^\s*()([^<>\s]+@[^<>\s]+)\s*$/);
+  if (!match || !EMAIL.test(match[2])) {
+    throw new Error('EMAIL_FROM must look like "Name <address@domain>" or "address@domain"');
+  }
+  return match[1]?.trim() ? { name: match[1].trim(), email: match[2] } : { email: match[2] };
 }
 
 function maskRecipient(address) {
@@ -83,7 +103,7 @@ function getTransport(config) {
 // Returns true when sent (or accepted by the console provider), false on any failure.
 // Never throws, so callers cannot leak whether an address exists through a 500 response,
 // and never logs the body, credentials or recipient address.
-export async function sendEmail(to, subject, html, { env = process.env, transport } = {}) {
+export async function sendEmail(to, subject, html, { env = process.env, transport, fetchImpl } = {}) {
   const config = getEmailConfig(env);
 
   if (!EMAIL.test(String(to))) {
@@ -91,6 +111,32 @@ export async function sendEmail(to, subject, html, { env = process.env, transpor
     return false;
   }
   const cleanSubject = String(subject).replace(/[\r\n]+/g, " ").slice(0, 200);
+
+  if (config.provider === "brevo") {
+    try {
+      const response = await (fetchImpl || globalThis.fetch)(config.brevoApiUrl, {
+        method: "POST",
+        headers: { "api-key": config.brevoApiKey, "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          sender: parseFrom(config.from),
+          to: [{ email: String(to) }],
+          subject: cleanSubject,
+          htmlContent: html,
+          textContent: htmlToText(html)
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!response.ok) {
+        console.warn(`Email failed: to ${maskRecipient(to)}, Brevo HTTP ${response.status}`);
+        return false;
+      }
+      console.log(`Email sent: to ${maskRecipient(to)}, subject "${cleanSubject}"`);
+      return true;
+    } catch (error) {
+      console.warn(`Email failed: to ${maskRecipient(to)}, ${error?.code || error?.name || "Error"}`);
+      return false;
+    }
+  }
 
   if (config.provider !== "smtp") {
     if (config.debug) {
