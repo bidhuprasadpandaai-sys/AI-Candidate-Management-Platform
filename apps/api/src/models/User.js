@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ROLES } from "@acmp/shared";
 import crypto from "node:crypto";
 import { promisify } from "node:util";
 
@@ -19,7 +20,17 @@ const UserSchema = new mongoose.Schema({
   verificationToken: { type: String },
   verificationExpires: { type: Date },
   resetToken: { type: String },
-  resetExpires: { type: Date }
+  resetExpires: { type: Date },
+  // Access control (the free-text `role` above is only a job-title label).
+  accessRole: { type: String, enum: ROLES },
+  // Exactly one company per user (null for admins or accounts not yet assigned)
+  companyId: { type: String, index: true },
+  isActive: { type: Boolean, default: true },
+  // One-time sign-in code (stored as an HMAC, never in clear text)
+  otpHash: { type: String },
+  otpExpires: { type: Date },
+  otpAttempts: { type: Number, default: 0 },
+  otpSentAt: { type: Date }
 }, { timestamps: true });
 
 UserSchema.methods.setPassword = async function (plain) {

@@ -10,9 +10,11 @@ import OverlayPanel from "primevue/overlaypanel";
 import Tag from "primevue/tag";
 import { CANDIDATE_STATUSES, STATUS_SEVERITY } from "@acmp/shared";
 import { useChat } from "@acmp/chat";
+import { useAuthStore } from "../stores/auth";
 import { useCandidateStore } from "../stores/candidates";
 import AddCandidateModal from "./AddCandidateModal.vue";
 import CandidateDetailSidebar from "./CandidateDetailSidebar.vue";
+import ProfileMeter from "./ProfileMeter.vue";
 import CandidateChatSidebar from "./CandidateChatSidebar.vue";
 
 // ─── Preference keys ─────────────────────────────────────────────────────────
@@ -26,6 +28,7 @@ const emit = defineEmits(["switch-to-chat"]);
 
 // ─── Store / Chat ─────────────────────────────────────────────────────────────
 const store = useCandidateStore();
+const auth = useAuthStore();
 const chat  = useChat();
 
 // ─── Modals ──────────────────────────────────────────────────────────────────
@@ -53,12 +56,15 @@ const DEFAULT_COLUMNS = [
   { key: "name",            header: "Candidate",   field: "name",            type: "text",   sortable: true  },
   { key: "role",            header: "Role",         field: "role",            type: "text",   sortable: true  },
   { key: "status",          header: "Status",       field: "status",          type: "status", sortable: true  },
-  { key: "score",           header: "Score",        field: "score",           type: "score",  sortable: true  },
+  { key: "score",           header: "Match",        field: "score",           type: "match",  sortable: true  },
   { key: "stage",           header: "Stage",        field: "stage",           type: "text",   sortable: true  },
   { key: "location",        header: "Location",     field: "location",        type: "text",   sortable: true  },
+  { key: "profile",         header: "Profile",      field: "profile",         type: "profile", sortable: false },
   { key: "skills",          header: "Skills",       field: "skills",          type: "skills", sortable: false },
   { key: "experienceYears", header: "Experience",   field: "experienceYears", type: "text",   sortable: true  },
   { key: "email",           header: "Email",        field: "email",           type: "text",   sortable: false },
+  { key: "ownerName",       header: "Owner",        field: "ownerName",       type: "text",   sortable: true  },
+  { key: "companyName",     header: "Company",      field: "companyName",     type: "text",   sortable: true  },
 ];
 
 // ─── Load prefs from localStorage ───────────────────────────────────────────
@@ -364,7 +370,7 @@ onMounted(() => {
           </div>
         </OverlayPanel>
 
-        <Button label="Add Candidate" icon="pi pi-plus" severity="success" @click="showAddModal = true" />
+        <Button v-if="auth.can('candidate:create')" label="Add Candidate" icon="pi pi-plus" severity="success" @click="showAddModal = true" />
         <Button label="Refresh" icon="pi pi-refresh" text @click="store.applyFilters" />
       </div>
     </div>
@@ -440,20 +446,29 @@ onMounted(() => {
           </template>
         </Column>
 
-        <!-- score gauge -->
-        <Column v-else-if="col.type === 'score'" :key="`col-${col.key}`" :columnKey="col.key" field="score" header="Score" :sortable="true">
+        <!-- match: the fit score for each job the candidate applied to -->
+        <Column v-else-if="col.type === 'match'" :key="`col-${col.key}`" :columnKey="col.key" field="score" header="Match" :sortable="true" style="min-width: 11rem">
           <template #body="sp">
-            <div class="score-gauge-container">
-              <svg class="score-gauge" viewBox="0 0 36 36">
-                <path class="circle-bg"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle-fill"
-                  :stroke-dasharray="`${sp.data.score}, 100`"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  :stroke="sp.data.score >= 90 ? '#10b981' : sp.data.score >= 80 ? '#3b82f6' : '#f59e0b'" />
-              </svg>
-              <span class="score-val">{{ sp.data.score }}</span>
+            <div v-if="sp.data.applications?.length" class="match-chips" data-test="match-cell">
+              <span
+                v-for="application in sp.data.applications.slice(0, 2)"
+                :key="application.id"
+                class="match-chip"
+                :class="`fit-${application.level}`"
+                :title="`${application.jobTitle}: ${application.score}/100`"
+              >
+                <strong>{{ application.score }}</strong> {{ application.jobTitle }}
+              </span>
+              <span v-if="sp.data.applications.length > 2" class="muted">+{{ sp.data.applications.length - 2 }} more</span>
             </div>
+            <span v-else class="muted" title="Add this candidate to a job to see a match score">–</span>
+          </template>
+        </Column>
+
+        <!-- profile completion -->
+        <Column v-else-if="col.type === 'profile'" :key="`col-${col.key}`" :columnKey="col.key" header="Profile" style="min-width: 9rem">
+          <template #body="sp">
+            <ProfileMeter :candidate="sp.data" compact />
           </template>
         </Column>
 
@@ -561,7 +576,7 @@ onMounted(() => {
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
 }
-.clickable-table :deep(tbody tr:hover)  { background-color: rgba(59, 130, 246, 0.04) !important; }
+.clickable-table :deep(tbody tr:hover)  { background-color: color-mix(in srgb, var(--primary-color) 4%, transparent) !important; }
 .clickable-table :deep(tbody tr:active) { transform: scale(0.998); }
 
 /* ── Column panel (inside OverlayPanel) ── */
@@ -641,7 +656,7 @@ onMounted(() => {
   transition: transform 0.2s;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-.col-toggle-switch.on .slider { background: #3b82f6; }
+.col-toggle-switch.on .slider { background: var(--primary-500); }
 .col-toggle-switch.on .slider::after { transform: translateX(14px); }
 
 .col-toggle-label {
@@ -672,13 +687,13 @@ onMounted(() => {
   border-radius: 8px;
   background: linear-gradient(135deg, #eff6ff, #f0fdf4);
   border: 1px dashed #93c5fd;
-  color: #2563eb;
+  color: var(--primary-600);
   cursor: pointer;
   font-size: 0.84rem;
   font-weight: 600;
   transition: background 0.15s, border-color 0.15s;
 }
-.col-panel__add-btn:hover { background: #dbeafe; border-color: #3b82f6; }
+.col-panel__add-btn:hover { background: #dbeafe; border-color: var(--primary-500); }
 
 /* ── Add column form ── */
 .add-col-form {
@@ -716,4 +731,11 @@ onMounted(() => {
   padding: 8px 12px;
   margin: 0;
 }
+.match-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.match-chip { display: inline-flex; gap: 4px; align-items: baseline; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 8px; border-radius: 999px; font-size: 0.8rem; color: #0f172a; background: #e2e8f0; }
+.match-chip strong { color: #fff; border-radius: 999px; padding: 0 6px; background: #94a3b8; }
+.match-chip.fit-strong strong { background: #10b981; }
+.match-chip.fit-good strong { background: var(--primary-500); }
+.match-chip.fit-partial strong { background: #f59e0b; }
+.match-chip.fit-weak strong { background: #ef4444; }
 </style>

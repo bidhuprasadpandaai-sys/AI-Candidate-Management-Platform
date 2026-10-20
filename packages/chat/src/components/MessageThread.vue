@@ -248,7 +248,7 @@ watch(
   width: 3rem;
   height: 3rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #134e4a, #14b8a6);
+  background: linear-gradient(135deg, #134e4a, var(--accent-color));
   color: #fff;
   font-weight: 700;
 }
@@ -331,7 +331,7 @@ watch(
 
 .message-bubble--recruiter {
   align-self: flex-end;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
   color: #eff6ff;
 }
 
@@ -448,7 +448,7 @@ watch(
   align-self: end;
   border: none;
   border-radius: 999px;
-  background: #0f766e;
+  background: var(--primary-600);
   color: #fff;
   padding: 0.85rem 1.2rem;
   font-weight: 700;

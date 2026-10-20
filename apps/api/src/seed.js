@@ -1,9 +1,7 @@
-import dotenv from "dotenv";
+import "./config/env.js";
 import { connectDB } from "./config/db.js";
 import { seedCandidates } from "./data/seedCandidates.js";
 import { Candidate } from "./models/Candidate.js";
-
-dotenv.config();
 
 const connected = await connectDB();
 

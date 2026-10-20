@@ -11,9 +11,14 @@
     "dev:web": "yarn workspace web dev",
     "dev:api": "yarn workspace api dev",
     "build": "yarn workspace @acmp/shared build && yarn workspace @acmp/chat build && yarn workspace web build && yarn workspace api build",
-    "seed": "yarn workspace api seed"
+    "seed": "yarn workspace api seed",
+    "test": "yarn workspace api test && yarn workspace web test",
+    "test:e2e": "playwright test",
+    "email:test": "yarn workspace api email:test",
+    "set-role": "yarn workspace api set-role"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "concurrently": "^9.1.2"
   },
   "engines": {

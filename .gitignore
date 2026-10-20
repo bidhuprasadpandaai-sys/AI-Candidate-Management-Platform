@@ -142,3 +142,10 @@ vite.config.ts.timestamp-*
 .vibecheck/provenance/
 .vibecheck/isl-studio/
 .vibecheck/sync-queue.json
+
+# Test output
+test-results/
+playwright-report/
+
+# Uploaded resumes (personal data): never commit
+apps/api/storage/

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@acmp/chat": "1.0.0",
@@ -20,6 +21,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
-    "vite": "^6.4.4"
+    "@vue/test-utils": "^2.5.1",
+    "jsdom": "^30.1.2",
+    "vite": "^6.4.4",
+    "vitest": "^5.0.4"
   }
 }

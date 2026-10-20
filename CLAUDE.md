@@ -129,7 +129,7 @@ The API falls back to in-memory demo data when `MONGODB_URI` is not set or the c
 | Base branch | `main` (repo default; current work is on `feature/candidate-management-setup`; confirm before opening PRs) |
 | Install command | `yarn install` |
 | Build command | `yarn build` (builds `@acmp/shared`, `@acmp/chat`, `web`, `api`; the API/shared/chat builds are placeholder checks) |
-| Test command | _None yet. No test runner or test files exist; say so at the QA gate rather than skipping silently_ |
+| Test command | `yarn test` (API unit and end-to-end tests with `node --test`, web component tests with Vitest; set `E2E_MONGODB_URI` to a throwaway database to run the role/ownership scenarios on MongoDB); `yarn test:e2e` (Playwright UI end-to-end, uses system Chrome, own ports 4311/4411) |
 | Run command | `yarn dev` (web + api); `yarn dev:web`, `yarn dev:api` for one side; `yarn seed` to seed MongoDB |
 
 If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record the answer here and in `HANDOFF.md`.
@@ -137,7 +137,8 @@ If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record th
 ### Ports and environment
 
 - Real dev ports are **API `4310`** and **web `4410`** (`apps/api/.env.example`, `apps/web/vite.config.js`). `README.md` still says 3000/5173; trust the code and fix the README when touching it.
-- Env files: copy `apps/api/.env.example` and `apps/web/.env.example` to `.env`. `.env` files are git-ignored; never commit them, print their values, or paste secrets into docs, commits or chat.
+- Env: one shared **repo-root `.env`** (copy from root `.env.example`) holds app settings and AI provider keys. The API loads `apps/api/.env` first, then the root `.env` (process env wins over both; loader: `apps/api/src/config/env.js`, imported first). Vite reads the root `.env` via `envDir` and exposes **only `VITE_*`** variables to the browser. `.env` files are git-ignored; never commit them, print their values, or paste secrets into docs, commits or chat.
+- **AI keys are server-side only.** Never prefix `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_*_KEY`, `COMPAT_KEYS` or `JWT_SECRET` with `VITE_`, never read them in `apps/web` or `packages/chat`, and never return them in API responses or logs. The web app calls AI features through the API.
 - API vars seen in the example: `PORT`, `CLIENT_URL`, `MONGODB_URI`. Web: `VITE_API_BASE_URL`. Check `apps/api/src/utils/jwt.js` and `utils/email.js` for further required vars (JWT secret, email transport) before relying on auth flows.
 
 ## Starting a session
@@ -159,6 +160,8 @@ If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record th
 | `docs/Design.md` | Design principles, UI/UX, detailed component design, error handling | At every phase close |
 | `docs/BUGS.md` | Running bug log; the guide for QA | As soon as a bug is found, and when its status changes |
 | `docs/SECURITY.md` | Security findings and vulnerabilities, scan results, Security gate runs | As soon as a finding is made, and when its status changes |
+| `docs/UIStyleGuide.md` | UI styling guide: tokens, colours, components, the company branding place; read before changing any screen | When the look or branding rules change |
+| `docs/Roadmap.md` | Phased feature plan and the AI efficiency principles every AI feature must follow | When scope, order or open decisions change; at every phase close |
 
 Docs describe what was actually built, not what was planned. Add an entry to each doc's change log at every update.
 
@@ -196,10 +199,14 @@ A phase is **not complete** until all of the following are done:
 
 ## Code conventions
 
+- **AI features** follow the principles in `docs/Roadmap.md` section 1 (deterministic first, cache results, smallest model that passes its eval, minimum context and redacted PII, structured output, one server-side AI gateway, budgets, human confirmation before any change).
+
 - ESM everywhere (`"type": "module"`); use `import`/`export`, include the `.js` extension on relative imports in `apps/api` and packages.
 - Match surrounding style: double quotes, semicolons, 2-space indent, Vue 3 SFCs, Pinia stores, PrimeVue 3 components (not v4 APIs).
 - Put logic shared by API and web in `packages/shared`; reusable chat UI in `packages/chat`. Don't duplicate it in the apps.
 - New dashboard modules: add the component under `apps/web/src/components/modules/`, register it in `apps/web/src/microfrontends/registry.js`, and add it to `moduleManifest` in `apps/api/src/index.js`.
+- **Access control:** every new API route must declare its permission (`requirePermission`) and scope data to the user's company (`canViewCandidate` and friends from `@acmp/shared`; never return another company's data); return 404 for data outside the user's company. New permissions go in `packages/shared/src/permissions.js` with tests. Record an audit entry (`recordAudit`) for every state change, with field names, statuses and ids only, never secrets or message text.
+- **Uploads:** accept files only through a size-limited route, decide the type from the bytes, never trust the client's name or content type, store under random names outside the web root, keep the files git-ignored, scope them to the company, return downloads as attachments, and delete them with their owner record. Personal data from files must be redacted before any model call.
 - Never hardcode secrets, tokens or connection strings. Validate and sanitize request input on new API routes, and keep auth checks on protected endpoints.
 
 ## Plan first, then proceed
@@ -213,7 +220,7 @@ These must exist and stay current. Create them from the skeletons only if missin
 - `HANDOFF.md` (handoff document)
 - `docs/FunctionalSpecification.md` (functional document)
 - `docs/Design.md` (design document)
-- Also kept: `docs/TechnicalSpecification.md`, `docs/Architecture.md`, `docs/BUGS.md`, `docs/SECURITY.md` (security findings and gate runs)
+- Also kept: `docs/TechnicalSpecification.md`, `docs/Architecture.md`, `docs/BUGS.md`, `docs/SECURITY.md`, `docs/Roadmap.md` (security findings and gate runs)
 
 ## Quality gates
 
@@ -234,6 +241,7 @@ Bugs found by any gate go into `docs/BUGS.md` immediately. Security findings go 
 
 Run on every phase close and before any commit, push or PR the user asks for. Fail the gate on any open Critical or High finding unless the user explicitly accepts the risk.
 
+0. **Access control check:** every new or changed route has a permission guard and scopes data to the user's company; the assistant and LLM context use only visible candidates; the audit log gets an entry for each change and no secrets.
 1. **Leak check:** no secrets, tokens, passwords, connection strings with credentials, private keys, real candidate PII or `.env` contents in tracked files, staged changes, docs, logs, commit messages or chat output. Only `.env.example` files with placeholders may be tracked. Check `git status` and `git diff --staged` before committing; scan new untracked files (e.g. `playground-1.mongodb.js`, `.vscode/`) before they are added.
 2. **Code review for vulnerabilities:** OWASP Top 10 on the diff: injection (including NoSQL), broken auth/authorization, missing input validation, XSS in Vue templates (`v-html`), CORS, session/token handling, error messages that expose internals.
 3. **Dependencies:** run `yarn npm audit` and review new or upgraded packages and lockfile changes.

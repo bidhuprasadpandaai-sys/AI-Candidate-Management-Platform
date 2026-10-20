@@ -61,7 +61,7 @@ const pipelineStats = computed(() => {
   });
 
   return [
-    { label: "Screening Review", count: counts.screening, status: "screening", percentage: total ? Math.round((counts.screening / total) * 100) : 0, color: "var(--p-info-color, #3b82f6)" },
+    { label: "Screening Review", count: counts.screening, status: "screening", percentage: total ? Math.round((counts.screening / total) * 100) : 0, color: "var(--p-info-color, var(--primary-500))" },
     { label: "Active Interviews", count: counts.interview, status: "interview", percentage: total ? Math.round((counts.interview / total) * 100) : 0, color: "var(--p-warn-color, #f59e0b)" },
     { label: "Offers Extended", count: counts.offer, status: "offer", percentage: total ? Math.round((counts.offer / total) * 100) : 0, color: "var(--p-success-color, #10b981)" },
     { label: "Successfully Hired", count: counts.hired, status: "hired", percentage: total ? Math.round((counts.hired / total) * 100) : 0, color: "#06b6d4" },
@@ -215,13 +215,13 @@ const experienceSpread = computed(() => {
 }
 
 .api-card {
-  border-left: 4px solid #3b82f6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(255, 255, 255, 0.9));
+  border-left: 4px solid var(--primary-500);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 5%, transparent), rgba(255, 255, 255, 0.9));
 }
 
 .mode-card {
-  border-left: 4px solid #8b5cf6;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(255, 255, 255, 0.9));
+  border-left: 4px solid var(--accent-color);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 5%, transparent), rgba(255, 255, 255, 0.9));
 }
 
 .shortlist-card {
@@ -330,7 +330,7 @@ const experienceSpread = computed(() => {
 
 .exp-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  background: linear-gradient(90deg, var(--primary-500), #6366f1);
   border-radius: 4px;
   transition: width 0.5s ease;
 }
@@ -349,15 +349,15 @@ const experienceSpread = computed(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.12);
+  background: color-mix(in srgb, var(--primary-color) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-color) 12%, transparent);
   border-radius: 8px;
   transition: all 0.2s ease;
   cursor: default;
 }
 
 .cloud-chip:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
   transform: translateY(-2px) scale(1.05) !important;
 }
 
@@ -369,7 +369,7 @@ const experienceSpread = computed(() => {
 
 .c-badge {
   font-size: 0.72rem;
-  background: #3b82f6;
+  background: var(--primary-500);
   color: white;
   padding: 1px 6px;
   border-radius: 999px;

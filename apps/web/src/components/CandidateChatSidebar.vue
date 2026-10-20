@@ -193,7 +193,7 @@ watch(
 
 .chat-loading i {
   font-size: 2rem;
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .chat-error {

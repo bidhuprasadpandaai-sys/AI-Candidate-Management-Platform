@@ -77,14 +77,14 @@ const activeSubTab = ref("pipeline");
 }
 
 .sub-tab-btn:hover {
-  background: rgba(59, 130, 246, 0.05);
+  background: color-mix(in srgb, var(--primary-color) 5%, transparent);
   color: var(--text-primary);
 }
 
 .sub-tab-btn.active {
   background: var(--primary-gradient);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-color) 25%, transparent);
 }
 </style>
 
