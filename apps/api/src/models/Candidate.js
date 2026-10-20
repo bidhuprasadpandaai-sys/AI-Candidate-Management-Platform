@@ -3,8 +3,9 @@ import mongoose from "mongoose";
 const candidateSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
     role: { type: String, required: true },
+    phone: { type: String, default: "" },
     status: {
       type: String,
       enum: ["screening", "interview", "offer", "hired", "rejected"],
@@ -16,6 +17,9 @@ const candidateSchema = new mongoose.Schema(
     experienceYears: { type: Number, default: 0 },
     skills: [{ type: String }],
     summary: { type: String, default: "" },
+    ownerId: { type: String, index: true },
+    resumeId: { type: String },
+    companyId: { type: String, index: true },
     notes: [
       {
         author: { type: String, default: "Recruiter" },
@@ -37,6 +41,9 @@ const candidateSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// A candidate email is unique within a company (the same person can be a candidate at two companies).
+candidateSchema.index({ companyId: 1, email: 1 }, { unique: true });
 
 export const Candidate =
   mongoose.models.Candidate || mongoose.model("Candidate", candidateSchema);

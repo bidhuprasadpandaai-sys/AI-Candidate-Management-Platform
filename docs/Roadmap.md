@@ -53,8 +53,9 @@ Goal: make the app safe to use with a team and make every later AI feature cheap
 | Evaluation harness (`yarn eval`) with a seed set | Prevents prompt/model regressions | Runs in CI; fails on score drop |
 | HTTPS for the LLM host (closes SEC-008) | Secure transport | `OLLAMA_HOST` is https; HTTP blocked outside development |
 | Real email provider | None | **Done early (2026-10-15):** generic SMTP via `EMAIL_PROVIDER=smtp` (free options: Brevo, Resend, Mailgun, or Mailpit locally). Remaining: provider account and verified sender domain (SPF/DKIM/DMARC), HTML templates |
-| Roles (Admin, Recruiter, Hiring manager, Viewer) and candidate ownership | None | Route-level permission checks; "my candidates" filter; tests per role |
-| Audit log (who, what, when, including AI-triggered changes) | Marks AI-made changes | Visible per candidate; immutable entries |
+| Roles (Admin, Recruiter, Hiring manager, Read-only) and multi-company tenancy | None | **Done (2026-10-15):** route-level permissions; companies as tenants (one company per user, whole-company visibility, strict isolation); Admin module (users, companies, audit); assistant bound by the user's role and company; tests per role and per tenant. Remaining: invite-only sign-up (SEC-010), append-only notes (BUG-003) |
+| Audit log (who, what, when, including AI-triggered changes) | Marks AI-made changes | **Done (2026-10-15):** append-only, admin log with filters, per-candidate activity feed, AI actions tagged `ai` |
+| Email-code (OTP) sign-in as an alternative to password | None | **Done (2026-10-15):** 6-digit code by email, 10 minutes, single use, 5 guesses, 1 per minute; UI tab on the sign-in page |
 | CI pipeline (GitHub Actions: build, tests, e2e, audit, leak scan) | Runs the eval set | Required check on pull requests |
 
 Exit: Security gate has no open findings other than accepted risks; eval and cost dashboards exist.
@@ -65,9 +66,9 @@ Goal: organise candidates around real job openings.
 | Feature | AI usage | Acceptance criteria |
 |---------|----------|---------------------|
 | Job openings (title, department, location, requirements, hiring manager, status) | Optional "draft job description" using the gateway (small model, cached by inputs) | CRUD with validation; candidates link to a job |
-| Per-job Kanban board with drag between stages and configurable stages | None | Moves persist, are audited, and respect permissions |
+| Per-job Kanban board with drag between stages and configurable stages | None | **Done (2026-10-15):** per-job board over the five existing stages with drag and drop and a stage menu; configurable stages are not built yet |
 | CSV/Excel import and export with preview and error report | None | Bad rows reported, no partial corruption |
-| Tags, saved filters and saved searches | None | Per-user, shareable within a team |
+| Tags, saved filters and saved searches | None | Per-user, shareable within a company |
 | Duplicate detection and merge | Deterministic (normalised email, phone, fuzzy name); no model | Suggested duplicates reviewed by a human before merge |
 | Finish the Customize Columns dialog (from the stash) and accessibility pass | None | Keyboard accessible; tests added |
 
@@ -76,12 +77,12 @@ Goal: turn resumes into structured, searchable candidates quickly and cheaply. T
 
 | Feature | AI usage and efficiency design | Acceptance criteria |
 |---------|-------------------------------|---------------------|
-| Resume upload (PDF/DOCX), virus-scan hook, size limits, retention settings | None | Files stored outside the web root; limits enforced |
-| Text extraction | Non-AI (library such as pdfplumber/docling or Node equivalent, decision in section 5); OCR only for scanned files | Extraction quality checked on a sample set |
-| Structured extraction (skills, experience, education, titles) | Rules and dictionaries first (emails, phones, dates, known skills); small model only for the leftover fields; JSON schema output; content-hash cache so re-uploads are free; runs in the background queue | Eval set accuracy meets the agreed threshold; failures fall back to partial rule-based profile |
-| PII redaction before any model call | Names, contacts and addresses replaced with placeholders, restored after | Tests prove nothing identifying leaves the server |
+| Resume upload (PDF/DOCX), virus-scan hook, size limits, retention settings | None | **Done (2026-10-15):** PDF and Word upload, 5 MB limit, local-disk storage, download, audit; encryption at rest and retention rules remain (SEC-013) |
+| Text extraction | Non-AI (library such as pdfplumber/docling or Node equivalent, decision in section 5); OCR only for scanned files | **Done (2026-10-15):** `unpdf` for PDF, direct `word/document.xml` read for DOCX (Node only, no Python service); OCR for scanned files is not built |
+| Structured extraction (skills, experience, education, titles) | Rules and dictionaries first (emails, phones, dates, known skills); small model only for the leftover fields; JSON schema output; content-hash cache so re-uploads are free; runs in the background queue | **Done (2026-10-15):** rules first, optional model only for missing fields from redacted text, validated JSON, same-file reuse; the eval set and background queue are still Phase 2 items |
+| PII redaction before any model call | Names, contacts and addresses replaced with placeholders, restored after | **Done for resumes (2026-10-15):** names, emails, phones, links and long numbers are replaced before any model call (tested); the shared gateway-level redaction is still Phase 2 |
 | Embeddings for resumes and jobs | One embedding per document, stored once, recomputed only when content changes | Vector search works locally; no embedding call on read |
-| Hybrid match score | Deterministic score (skill overlap, years, location, must-haves) plus embedding similarity; the model is used only to write a short explanation for the top N, lazily, on first view | Score reproducible and explainable; explanation cached |
+| Hybrid match score | Deterministic score (skill overlap, years, location, must-haves) plus embedding similarity; the model is used only to write a short explanation for the top N, lazily, on first view | **Done in a first form (2026-10-15):** an explainable rules-based fit score from profile, resume and job description (no embeddings yet), with optional AI wording only; embeddings and batch scoring remain |
 | Consent and retention (GDPR basics): consent flag, data export, delete candidate, retention timer | None | Delete removes files, embeddings and cached AI results |
 | Bias safeguards | Exclude protected attributes from scoring inputs; periodic fairness report on score distributions | Documented and tested |
 

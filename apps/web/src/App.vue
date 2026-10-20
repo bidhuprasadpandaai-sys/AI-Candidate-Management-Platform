@@ -7,15 +7,35 @@ import AppHeader from "./components/AppHeader.vue";
 import { microfrontendRegistry } from "./microfrontends/registry";
 import { useCandidateStore } from "./stores/candidates";
 import { useAuthStore } from "./stores/auth";
+import { useBrandingStore } from "./stores/branding";
+import { initialsOf } from "./config/brand";
 
 const store = useCandidateStore();
 const authStore = useAuthStore();
+const brand = useBrandingStore();
 const route = useRoute();
 const router = useRouter();
 
+const moduleIcons = {
+  overview: "pi-home",
+  candidates: "pi-users",
+  chat: "pi-comments",
+  assistant: "pi-bolt",
+  jobs: "pi-briefcase",
+  analytics: "pi-chart-bar",
+  admin: "pi-shield",
+  profile: "pi-user"
+};
+
+// Modules that need a permission are hidden from users who lack it (the API enforces it too).
+const visibleModules = computed(() =>
+  store.modules.filter((module) => !module.requires || authStore.can(module.requires))
+);
+
 const activeModuleComponent = computed(() => {
+  const allowed = visibleModules.value.some((module) => module.id === store.activeModule);
   return (
-    microfrontendRegistry[store.activeModule] || microfrontendRegistry.overview
+    (allowed && microfrontendRegistry[store.activeModule]) || microfrontendRegistry.overview
   );
 });
 
@@ -23,7 +43,14 @@ const isAuthRoute = computed(() => Boolean(route.meta.authLayout));
 const isAuthenticated = computed(() => Boolean(authStore.user));
 const isAuthResolved = computed(() => !authStore.loading);
 const userName = computed(() => authStore.user?.name || "User");
-const userRole = computed(() => authStore.user?.role || "Recruiter");
+// Access level first; the free-text job title is only a label.
+const userRole = computed(() => {
+  const title = authStore.user?.role;
+  const access = authStore.accessRoleLabel || "Recruiter";
+  const company = authStore.user?.companyName;
+  const base = title ? `${access} (title: ${title})` : access;
+  return company ? `${base} · ${company}` : base;
+});
 const profileImage = computed(() => authStore.user?.profilePic || authStore.user?.avatarUrl || "");
 const userInitials = computed(() => {
   const parts = String(userName.value)
@@ -42,6 +69,10 @@ const profileMenuRef = ref(null);
 async function initializeShell() {
   if (!isAuthRoute.value && isAuthenticated.value) {
     await store.initialize();
+    // white-label: the signed-in company's name, logo, colours and details
+    if (!brand.loaded) await brand.load();
+  } else if (!isAuthenticated.value && brand.loaded) {
+    brand.reset();
   }
 }
 
@@ -58,6 +89,7 @@ async function ensureAuth() {
 
 async function logout() {
   await authStore.logout();
+  brand.reset();
   profileMenuOpen.value = false;
   await router.replace("/signin");
 }
@@ -113,23 +145,27 @@ watch(
   <div v-else-if="isAuthenticated" class="app-shell shell-layout">
     <aside class="shell-sidebar">
       <div class="sidebar-brand">
-        <div class="brand-mark">AI</div>
+        <div class="brand-mark" data-testid="brand-mark">
+          <img v-if="brand.branding.logo" :src="brand.branding.logo" :alt="`${brand.title} logo`" />
+          <template v-else>{{ initialsOf(brand.title) }}</template>
+        </div>
         <div>
-          <p class="eyebrow">Platform shell</p>
-          <h2>TalentOS</h2>
+          <h2 data-testid="brand-name">{{ brand.title }}</h2>
+          <p>Powered by {{ brand.platformName }}</p>
         </div>
       </div>
 
       <nav class="sidebar-nav">
         <button
-          v-for="module in store.modules"
+          v-for="module in visibleModules"
           :key="module.id"
           class="sidebar-link"
           :class="{ active: store.activeModule === module.id }"
+          :title="module.description"
           @click="store.setActiveModule(module.id)"
         >
-          <strong>{{ module.name }}</strong>
-          <small>{{ module.description }}</small>
+          <i class="pi" :class="moduleIcons[module.id] || 'pi-circle'" aria-hidden="true"></i>
+          <span>{{ module.name }}</span>
         </button>
       </nav>
 
@@ -180,6 +216,14 @@ watch(
     <main class="workspace-pane">
       <AppHeader />
 
+      <Message v-if="authStore.user && !authStore.isAdmin && !authStore.user.companyId" severity="warn" :closable="false">
+        You are not assigned to a company yet, so there is nothing to show. Ask an admin to add you to your company.
+      </Message>
+
+      <Message v-if="authStore.accessRole === 'viewer'" severity="info" :closable="false">
+        You have read-only access. Ask an admin to change your role if you need to add or edit candidates.
+      </Message>
+
       <Message
         :severity="store.backendReady ? 'success' : 'warn'"
         :closable="false"
@@ -207,7 +251,7 @@ watch(
 }
 
 .profile-footnote {
-  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding-top: 14px;
   position: relative;
 }
@@ -234,7 +278,7 @@ watch(
 }
 
 .avatar-fallback {
-  background: linear-gradient(135deg, #0ea5e9, #14b8a6);
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-color));
   color: #ffffff;
   font-size: 0.78rem;
   font-weight: 700;
@@ -249,11 +293,11 @@ watch(
 }
 
 .profile-copy strong {
-  color: #0f172a;
+  color: #ffffff;
 }
 
 .profile-copy small {
-  color: #64748b;
+  color: var(--sidebar-muted);
   font-size: 0.74rem;
 }
 
@@ -270,12 +314,12 @@ watch(
 }
 
 .profile-trigger:hover {
-  background: rgba(226, 232, 240, 0.32);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .trigger-chevron {
   margin-left: auto;
-  color: #64748b;
+  color: var(--sidebar-muted);
   transition: transform 0.2s ease;
 }
 
@@ -318,7 +362,7 @@ watch(
 
 .profile-menu-meta p {
   margin: 0.2rem 0 0;
-  color: #ec4899;
+  color: var(--primary-600);
   font-weight: 600;
   font-size: 0.86rem;
   overflow: hidden;

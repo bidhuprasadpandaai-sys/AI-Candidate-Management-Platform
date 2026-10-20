@@ -1,7 +1,7 @@
 import net from "node:net";
 
 // Minimal in-process SMTP server for tests: records commands and the last message body.
-export function fakeSmtpServer() {
+export function fakeSmtpServer(listenPort = 0) {
   const received = { commands: [], data: "" };
   const server = net.createServer((socket) => {
     let inData = false;
@@ -32,6 +32,6 @@ export function fakeSmtpServer() {
     });
   });
   return new Promise((resolve) =>
-    server.listen(0, "127.0.0.1", () => resolve({ server, received, port: server.address().port }))
+    server.listen(listenPort, "127.0.0.1", () => resolve({ server, received, port: server.address().port }))
   );
 }

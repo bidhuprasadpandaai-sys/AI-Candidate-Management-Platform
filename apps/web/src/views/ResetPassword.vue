@@ -5,7 +5,8 @@
 
     <div class="auth-shell">
       <header class="auth-header">
-        <span class="brand">NEXORA</span>
+        <span class="brand-mark-sm" aria-hidden="true">{{ platformName[0] }}</span>
+        <span class="brand">{{ platformName }}</span>
       </header>
 
       <main class="auth-card">
@@ -54,6 +55,9 @@
 </template>
 
 <script setup>
+import { PLATFORM } from "../config/brand";
+
+const platformName = PLATFORM.name;
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import InputText from 'primevue/inputtext';
@@ -115,9 +119,9 @@ async function reset() {
 
 <style scoped>
 .auth-page {
-  --accent: #0f766e;
-  --accent-strong: #115e59;
-  --bg: linear-gradient(165deg, #f0fdfa 0%, #f8fafc 45%, #ecfeff 100%);
+  --accent: var(--primary-600);
+  --accent-strong: var(--primary-700);
+  --bg: radial-gradient(1200px 600px at 10% -10%, var(--primary-100) 0%, transparent 60%), radial-gradient(900px 500px at 100% 110%, var(--accent-soft) 0%, transparent 60%), var(--surface-page);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -157,6 +161,20 @@ async function reset() {
 
 .auth-header {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-mark-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-gradient);
+  color: var(--primary-color-text);
+  font-weight: 800;
 }
 
 .brand {
@@ -168,9 +186,9 @@ async function reset() {
 
 .auth-card {
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 18px;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: 16px;
+  padding: 1.75rem;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.45);
 }

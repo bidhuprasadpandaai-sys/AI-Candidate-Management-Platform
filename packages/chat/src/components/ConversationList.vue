@@ -95,7 +95,7 @@ const sortedConversations = computed(() => {
 .conversation-list__new {
   border: none;
   border-radius: 999px;
-  background: #0f766e;
+  background: var(--primary-600);
   color: #fff;
   padding: 0.65rem 1rem;
   font-weight: 600;
@@ -125,8 +125,8 @@ const sortedConversations = computed(() => {
 }
 
 .conversation-item--active {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 1px #0f766e inset;
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 1px var(--primary-600) inset;
   background: #f0fdfa;
 }
 
@@ -136,7 +136,7 @@ const sortedConversations = computed(() => {
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-color));
   color: #fff;
   font-weight: 700;
 }

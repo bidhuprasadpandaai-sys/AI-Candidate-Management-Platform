@@ -415,7 +415,7 @@ async function changePassword() {
 }
 
 .avatar-fallback {
-  background: linear-gradient(140deg, #0ea5e9, #4f46e5);
+  background: linear-gradient(140deg, var(--accent-color), #4f46e5);
   color: #fff;
   font-size: 2rem;
   font-weight: 700;
@@ -578,7 +578,7 @@ input:disabled {
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #1d4ed8;
+  color: var(--primary-700);
 }
 
 .icon-input input {

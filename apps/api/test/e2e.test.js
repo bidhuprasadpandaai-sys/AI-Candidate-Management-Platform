@@ -27,6 +27,17 @@ function freePort() {
   });
 }
 
+let companyId;
+// Admins must say which company a new candidate belongs to.
+async function ensureCompany() {
+  if (!companyId) {
+    const created = await call("POST", "/companies", { name: "E2E Company" });
+    assert.equal(created.res.status, 201);
+    companyId = created.data.company.id;
+  }
+  return companyId;
+}
+
 async function call(method, path, body, { auth = true } = {}) {
   const headers = { "content-type": "application/json" };
   if (auth && cookie) headers.cookie = cookie;
@@ -159,6 +170,7 @@ test("dashboard and candidate list come from the demo data", async () => {
 
 test("candidate create, update and delete", async () => {
   const created = await call("POST", "/candidates", {
+    companyId: await ensureCompany(),
     name: "E2E Candidate",
     email: "candidate-e2e@example.com",
     role: "QA Engineer",
@@ -182,21 +194,22 @@ test("candidate create, update and delete", async () => {
 });
 
 test("candidate input is validated and whitelisted (BUG-002)", async () => {
-  const empty = await call("POST", "/candidates", {});
+  const cid = await ensureCompany();
+  const empty = await call("POST", "/candidates", { companyId: cid });
   assert.equal(empty.res.status, 400);
   assert.ok(empty.data.errors.length >= 3);
-  assert.equal((await call("POST", "/candidates", { name: "A", email: "bad", role: "R" })).res.status, 400);
-  assert.equal((await call("POST", "/candidates", { name: "A", email: "a@example.com", role: "R", status: "boss" })).res.status, 400);
-  assert.equal((await call("POST", "/candidates", { name: "A", email: "a@example.com", role: "R", score: 500 })).res.status, 400);
-  assert.equal((await call("POST", "/candidates", { name: { $ne: "" }, email: "a@example.com", role: "R" })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { companyId: cid, name: "A", email: "bad", role: "R" })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { companyId: cid, name: "A", email: "a@example.com", role: "R", status: "boss" })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { companyId: cid, name: "A", email: "a@example.com", role: "R", score: 500 })).res.status, 400);
+  assert.equal((await call("POST", "/candidates", { companyId: cid, name: { $ne: "" }, email: "a@example.com", role: "R" })).res.status, 400);
 
-  const ok = await call("POST", "/candidates", { name: "Valid One", email: "Valid.One@Example.com", role: "Dev", isAdmin: true, id: "hijack" });
+  const ok = await call("POST", "/candidates", { companyId: cid, name: "Valid One", email: "Valid.One@Example.com", role: "Dev", isAdmin: true, id: "hijack" });
   assert.equal(ok.res.status, 201);
   assert.equal(ok.data.email, "valid.one@example.com");
   assert.equal(ok.data.isAdmin, undefined);
   assert.notEqual(ok.data.id, "hijack");
 
-  const dup = await call("POST", "/candidates", { name: "Valid Two", email: "valid.one@example.com", role: "Dev" });
+  const dup = await call("POST", "/candidates", { companyId: cid, name: "Valid Two", email: "valid.one@example.com", role: "Dev" });
   assert.equal(dup.res.status, 409);
 
   assert.equal((await call("PUT", `/candidates/${ok.data.id}`, { status: "boss" })).res.status, 400);

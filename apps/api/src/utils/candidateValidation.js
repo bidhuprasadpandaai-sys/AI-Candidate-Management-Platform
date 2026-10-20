@@ -6,6 +6,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LIMITS = {
   name: 120,
   email: 254,
+  phone: 30,
   role: 120,
   stage: 120,
   location: 120,
@@ -116,6 +117,13 @@ export function validateCandidateInput(body, { partial = false } = {}) {
     if (email !== undefined) {
       if (EMAIL.test(email)) value.email = email.toLowerCase();
       else errors.push("email must be a valid email address");
+    }
+  }
+  if (body.phone !== undefined) {
+    const phone = text(body.phone, "phone", LIMITS.phone, errors, { allowEmpty: true });
+    if (phone !== undefined) {
+      if (phone === "" || /^[+\d][\d\s().-]{5,}$/.test(phone)) value.phone = phone;
+      else errors.push("phone must contain only digits, spaces and + ( ) . -");
     }
   }
   if (body.status !== undefined) {

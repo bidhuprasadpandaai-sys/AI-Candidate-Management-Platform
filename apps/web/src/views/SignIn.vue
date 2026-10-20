@@ -5,14 +5,20 @@
 
     <div class="auth-shell">
       <header class="auth-header">
-        <span class="brand">NEXORA</span>
+        <span class="brand-mark-sm" aria-hidden="true">{{ platformName[0] }}</span>
+        <span class="brand">{{ platformName }}</span>
       </header>
 
       <main class="auth-card">
         <h1>Welcome back</h1>
         <p class="subtitle">Sign in to continue managing your hiring pipeline.</p>
 
-        <form class="auth-form" @submit.prevent="signin">
+        <div class="mode-tabs" role="tablist" aria-label="Sign-in method">
+          <button type="button" role="tab" :aria-selected="mode === 'password'" :class="{ active: mode === 'password' }" @click="setMode('password')">Password</button>
+          <button type="button" role="tab" :aria-selected="mode === 'otp'" :class="{ active: mode === 'otp' }" @click="setMode('otp')">Email code</button>
+        </div>
+
+        <form v-if="mode === 'password'" class="auth-form" @submit.prevent="signin">
           <label for="email">Email</label>
           <span class="input-wrap">
             <i class="pi pi-envelope" aria-hidden="true" />
@@ -43,13 +49,52 @@
             <router-link class="inline-link" to="/signup">Create one</router-link>
           </p>
         </form>
+
+        <form v-else class="auth-form" @submit.prevent="otpSent ? verifyOtp() : requestOtp()">
+          <label for="otp-email">Email</label>
+          <span class="input-wrap">
+            <i class="pi pi-envelope" aria-hidden="true" />
+            <InputText id="otp-email" v-model="otpForm.email" type="email" placeholder="you@example.com" :disabled="otpSent" />
+          </span>
+
+          <template v-if="otpSent">
+            <label for="otp-code">6-digit code</label>
+            <span class="input-wrap">
+              <i class="pi pi-key" aria-hidden="true" />
+              <InputText
+                id="otp-code"
+                v-model="otpForm.code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                placeholder="123456"
+              />
+            </span>
+            <p class="hint">We emailed a code to {{ otpForm.email }}. It expires in 10 minutes.</p>
+          </template>
+
+          <Button type="submit" class="cta" :loading="loading">{{ otpSent ? 'Verify and sign in' : 'Send code' }}</Button>
+
+          <div v-if="otpSent" class="form-row">
+            <button type="button" class="link-button" :disabled="resendIn > 0 || loading" @click="requestOtp">
+              {{ resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code' }}
+            </button>
+            <button type="button" class="link-button" @click="resetOtp">Use a different email</button>
+          </div>
+
+          <Message v-if="error" severity="error">{{ error }}</Message>
+          <Message v-if="success" severity="success">{{ success }}</Message>
+        </form>
       </main>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { PLATFORM } from "../config/brand";
+
+const platformName = PLATFORM.name;
+import { onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
@@ -63,7 +108,7 @@ const route = useRoute();
 const loading = ref(false);
 const error = ref(null);
 const rememberMe = ref(true);
-const success = ref(route.query.signup === 'success' ? 'Account created successfully. Please sign in.' : null);
+const success = ref(route.query.signup === 'success' ? 'Account created. Please sign in. New accounts start with read-only access until an admin changes your role.' : null);
 
 const form = ref({
   email: '',
@@ -89,13 +134,89 @@ async function signin() {
     loading.value = false;
   }
 }
+
+// ── Email code (OTP) sign-in ──────────────────────────────────────────────────
+const mode = ref('password');
+const otpForm = ref({ email: '', code: '' });
+const otpSent = ref(false);
+const resendIn = ref(0);
+let resendTimer = null;
+
+function setMode(next) {
+  mode.value = next;
+  error.value = null;
+  success.value = null;
+}
+
+function startResendTimer(seconds = 60) {
+  resendIn.value = seconds;
+  clearInterval(resendTimer);
+  resendTimer = setInterval(() => {
+    resendIn.value -= 1;
+    if (resendIn.value <= 0) clearInterval(resendTimer);
+  }, 1000);
+}
+
+function resetOtp() {
+  otpSent.value = false;
+  otpForm.value = { email: otpForm.value.email, code: '' };
+  error.value = null;
+  success.value = null;
+  clearInterval(resendTimer);
+  resendIn.value = 0;
+}
+
+async function requestOtp() {
+  const email = otpForm.value.email.trim().toLowerCase();
+  if (!email) {
+    error.value = 'Email is required.';
+    return;
+  }
+
+  loading.value = true;
+  error.value = null;
+  success.value = null;
+  try {
+    await api.post('/auth/otp/request', { email }, { withCredentials: true });
+    otpForm.value.email = email;
+    otpSent.value = true;
+    success.value = 'If that email has an account, a sign-in code is on its way.';
+    startResendTimer();
+  } catch (e) {
+    error.value = e.response?.data?.error || e.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function verifyOtp() {
+  const code = otpForm.value.code.trim();
+  if (!/^\d{6}$/.test(code)) {
+    error.value = 'Enter the 6-digit code from your email.';
+    return;
+  }
+
+  loading.value = true;
+  error.value = null;
+  success.value = null;
+  try {
+    await api.post('/auth/otp/verify', { email: otpForm.value.email, code }, { withCredentials: true });
+    router.replace('/');
+  } catch (e) {
+    error.value = e.response?.data?.error || e.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
+onBeforeUnmount(() => clearInterval(resendTimer));
 </script>
 
 <style scoped>
 .auth-page {
-  --accent: #0f766e;
-  --accent-strong: #115e59;
-  --bg: linear-gradient(160deg, #ecfeff 0%, #f8fafc 40%, #f0fdfa 100%);
+  --accent: var(--primary-600);
+  --accent-strong: var(--primary-700);
+  --bg: radial-gradient(1200px 600px at 10% -10%, var(--primary-100) 0%, transparent 60%), radial-gradient(900px 500px at 100% 110%, var(--accent-soft) 0%, transparent 60%), var(--surface-page);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -115,7 +236,7 @@ async function signin() {
   height: 280px;
   left: -100px;
   top: -80px;
-  background: #99f6e4;
+  background: var(--primary-200);
 }
 
 .orb-right {
@@ -123,7 +244,7 @@ async function signin() {
   height: 320px;
   right: -120px;
   bottom: -120px;
-  background: #67e8f9;
+  background: var(--accent-soft);
 }
 
 .auth-shell {
@@ -135,6 +256,20 @@ async function signin() {
 
 .auth-header {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-mark-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-gradient);
+  color: var(--primary-color-text);
+  font-weight: 800;
 }
 
 .brand {
@@ -146,9 +281,9 @@ async function signin() {
 
 .auth-card {
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 18px;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: 16px;
+  padding: 1.75rem;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.45);
 }
@@ -263,4 +398,38 @@ label {
     font-size: 1.55rem;
   }
 }
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 1rem;
+  border-radius: 12px;
+  background: #e2e8f0;
+}
+.mode-tabs button {
+  border: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mode-tabs button.active {
+  background: #ffffff;
+  color: var(--accent-strong);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+.hint { margin: 0; font-size: 0.85rem; color: #64748b; }
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-strong);
+  font-weight: 600;
+  cursor: pointer;
+}
+.link-button:disabled { color: #94a3b8; cursor: default; }
 </style>

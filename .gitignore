@@ -146,3 +146,6 @@ vite.config.ts.timestamp-*
 # Test output
 test-results/
 playwright-report/
+
+# Uploaded resumes (personal data): never commit
+apps/api/storage/

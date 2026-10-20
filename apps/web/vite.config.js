@@ -8,6 +8,11 @@ export default defineConfig({
   // AI keys and other secrets must never use that prefix.
   envDir: fileURLToPath(new URL("../..", import.meta.url)),
   envPrefix: "VITE_",
+  // Pre-bundle components that are only imported by lazy-loaded modules, so the dev server does not
+  // discover them mid-session and reload the page.
+  optimizeDeps: {
+    include: ["primevue/datatable", "primevue/column", "primevue/multiselect", "primevue/tag"]
+  },
   resolve: {
     alias: {
       "@acmp/chat": fileURLToPath(

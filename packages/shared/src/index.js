@@ -7,6 +7,39 @@ export const CANDIDATE_STATUSES = [
   "rejected"
 ];
 
+export const JOB_STATUSES = ["draft", "open", "on_hold", "closed"];
+
+export const EMPLOYMENT_TYPES = ["full_time", "part_time"];
+export const EMPLOYMENT_TYPE_LABELS = { full_time: "Full time", part_time: "Part time" };
+
+export const RATE_UNITS = ["hour", "day", "week", "month", "year"];
+
+// Currencies an admin can offer to a company (each company picks its own preset list from these).
+export const CURRENCIES = {
+  USD: "US dollar", EUR: "Euro", GBP: "British pound", CAD: "Canadian dollar", AUD: "Australian dollar",
+  NZD: "New Zealand dollar", INR: "Indian rupee", SGD: "Singapore dollar", AED: "UAE dirham", CHF: "Swiss franc",
+  JPY: "Japanese yen", CNY: "Chinese yuan", BRL: "Brazilian real", MXN: "Mexican peso", ZAR: "South African rand",
+  SEK: "Swedish krona", NOK: "Norwegian krone", DKK: "Danish krone", PLN: "Polish zloty", PHP: "Philippine peso"
+};
+export const CURRENCY_CODES = Object.keys(CURRENCIES);
+
+export const JOB_STATUS_LABELS = {
+  draft: "Draft",
+  open: "Open",
+  on_hold: "On hold",
+  closed: "Closed"
+};
+
+export const JOB_STATUS_SEVERITY = {
+  draft: "secondary",
+  open: "success",
+  on_hold: "warning",
+  closed: "danger"
+};
+
+// Pipeline stages (candidate status), in board order.
+export const PIPELINE_STAGES = ["screening", "interview", "offer", "hired", "rejected"];
+
 export const STATUS_SEVERITY = {
   screening: "info",
   interview: "warning",
@@ -23,13 +56,10 @@ export function buildDashboardMetrics(candidates = []) {
   const hired = candidates.filter(
     (candidate) => candidate.status === "hired"
   ).length;
-  const averageScore = totalCandidates
-    ? Math.round(
-        candidates.reduce(
-          (sum, candidate) => sum + Number(candidate.score || 0),
-          0
-        ) / totalCandidates
-      )
+  // The score is a candidate's best job fit; candidates who have not applied to a job have none yet.
+  const scored = candidates.filter((candidate) => Number(candidate.score) > 0);
+  const averageScore = scored.length
+    ? Math.round(scored.reduce((sum, candidate) => sum + Number(candidate.score), 0) / scored.length)
     : 0;
 
   return {
@@ -294,3 +324,18 @@ export function generateAiReply(message = "", candidates = []) {
          "- **Add Recruiter Notes**: *\"Note for Ava: Impressive coding skills!\"*\n" +
          "- **Schedule Rounds**: *\"Schedule Technical interview for Noah Patel on Monday at 2 PM with Dave\"*";
 }
+export * from "./permissions.js";
+export * from "./profile.js";
+
+// Documents kept with a candidate (certificates, IDs, contracts ...). Each may have an expiry date.
+export const DOCUMENT_CATEGORIES = ["id_proof", "certificate", "license", "contract", "reference", "medical", "other"];
+
+export const DOCUMENT_CATEGORY_LABELS = {
+  id_proof: "ID proof",
+  certificate: "Certificate",
+  license: "License",
+  contract: "Contract",
+  reference: "Reference",
+  medical: "Medical / compliance",
+  other: "Other"
+};

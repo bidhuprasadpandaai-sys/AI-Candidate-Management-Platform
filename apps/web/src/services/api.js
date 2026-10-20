@@ -49,6 +49,9 @@ const api = {
   put(url, data, config = {}) {
     return request("put", url, { ...config, data });
   },
+  patch(url, data, config = {}) {
+    return request("patch", url, { ...config, data });
+  },
   delete(url, config) {
     return request("delete", url, config);
   }

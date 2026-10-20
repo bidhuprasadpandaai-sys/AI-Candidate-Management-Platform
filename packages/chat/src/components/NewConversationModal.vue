@@ -248,7 +248,7 @@ watch(type, (nextType) => {
 }
 
 .modal-card__toggle button.active {
-  background: #0f766e;
+  background: var(--primary-600);
   color: #fff;
 }
 
@@ -300,7 +300,7 @@ watch(type, (nextType) => {
 }
 
 .modal-card__create {
-  background: #0f766e;
+  background: var(--primary-600);
   color: #fff;
 }
 

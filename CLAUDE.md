@@ -129,7 +129,7 @@ The API falls back to in-memory demo data when `MONGODB_URI` is not set or the c
 | Base branch | `main` (repo default; current work is on `feature/candidate-management-setup`; confirm before opening PRs) |
 | Install command | `yarn install` |
 | Build command | `yarn build` (builds `@acmp/shared`, `@acmp/chat`, `web`, `api`; the API/shared/chat builds are placeholder checks) |
-| Test command | `yarn test` (API unit and end-to-end tests with `node --test`, web component tests with Vitest); `yarn test:e2e` (Playwright UI end-to-end, uses system Chrome, own ports 4311/4411) |
+| Test command | `yarn test` (API unit and end-to-end tests with `node --test`, web component tests with Vitest; set `E2E_MONGODB_URI` to a throwaway database to run the role/ownership scenarios on MongoDB); `yarn test:e2e` (Playwright UI end-to-end, uses system Chrome, own ports 4311/4411) |
 | Run command | `yarn dev` (web + api); `yarn dev:web`, `yarn dev:api` for one side; `yarn seed` to seed MongoDB |
 
 If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record the answer here and in `HANDOFF.md`.
@@ -160,6 +160,7 @@ If a value is still _TBD_ when it's needed, ask the user. Don't guess. Record th
 | `docs/Design.md` | Design principles, UI/UX, detailed component design, error handling | At every phase close |
 | `docs/BUGS.md` | Running bug log; the guide for QA | As soon as a bug is found, and when its status changes |
 | `docs/SECURITY.md` | Security findings and vulnerabilities, scan results, Security gate runs | As soon as a finding is made, and when its status changes |
+| `docs/UIStyleGuide.md` | UI styling guide: tokens, colours, components, the company branding place; read before changing any screen | When the look or branding rules change |
 | `docs/Roadmap.md` | Phased feature plan and the AI efficiency principles every AI feature must follow | When scope, order or open decisions change; at every phase close |
 
 Docs describe what was actually built, not what was planned. Add an entry to each doc's change log at every update.
@@ -204,6 +205,8 @@ A phase is **not complete** until all of the following are done:
 - Match surrounding style: double quotes, semicolons, 2-space indent, Vue 3 SFCs, Pinia stores, PrimeVue 3 components (not v4 APIs).
 - Put logic shared by API and web in `packages/shared`; reusable chat UI in `packages/chat`. Don't duplicate it in the apps.
 - New dashboard modules: add the component under `apps/web/src/components/modules/`, register it in `apps/web/src/microfrontends/registry.js`, and add it to `moduleManifest` in `apps/api/src/index.js`.
+- **Access control:** every new API route must declare its permission (`requirePermission`) and scope data to the user's company (`canViewCandidate` and friends from `@acmp/shared`; never return another company's data); return 404 for data outside the user's company. New permissions go in `packages/shared/src/permissions.js` with tests. Record an audit entry (`recordAudit`) for every state change, with field names, statuses and ids only, never secrets or message text.
+- **Uploads:** accept files only through a size-limited route, decide the type from the bytes, never trust the client's name or content type, store under random names outside the web root, keep the files git-ignored, scope them to the company, return downloads as attachments, and delete them with their owner record. Personal data from files must be redacted before any model call.
 - Never hardcode secrets, tokens or connection strings. Validate and sanitize request input on new API routes, and keep auth checks on protected endpoints.
 
 ## Plan first, then proceed
@@ -238,6 +241,7 @@ Bugs found by any gate go into `docs/BUGS.md` immediately. Security findings go 
 
 Run on every phase close and before any commit, push or PR the user asks for. Fail the gate on any open Critical or High finding unless the user explicitly accepts the risk.
 
+0. **Access control check:** every new or changed route has a permission guard and scopes data to the user's company; the assistant and LLM context use only visible candidates; the audit log gets an entry for each change and no secrets.
 1. **Leak check:** no secrets, tokens, passwords, connection strings with credentials, private keys, real candidate PII or `.env` contents in tracked files, staged changes, docs, logs, commit messages or chat output. Only `.env.example` files with placeholders may be tracked. Check `git status` and `git diff --staged` before committing; scan new untracked files (e.g. `playground-1.mongodb.js`, `.vscode/`) before they are added.
 2. **Code review for vulnerabilities:** OWASP Top 10 on the diff: injection (including NoSQL), broken auth/authorization, missing input validation, XSS in Vue templates (`v-html`), CORS, session/token handling, error messages that expose internals.
 3. **Dependencies:** run `yarn npm audit` and review new or upgraded packages and lockfile changes.

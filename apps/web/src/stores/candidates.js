@@ -13,6 +13,11 @@ const defaultModules = [
     description: "Pipeline and search experience"
   },
   {
+    id: "jobs",
+    name: "Jobs",
+    description: "Openings and pipeline boards"
+  },
+  {
     id: "assistant",
     name: "AI Assistant",
     description: "Recruiting copilot workspace"
@@ -26,12 +31,26 @@ const defaultModules = [
     id: "profile",
     name: "Profile Settings",
     description: "Manage personal account details"
+  },
+  {
+    id: "admin",
+    name: "Admin",
+    description: "Users, companies and audit log",
+    requires: "user:manage"
   }
 ];
+
+// Counts board loads so stale responses can be ignored (see fetchBoard).
+let boardRequest = 0;
 
 export const useCandidateStore = defineStore("candidates", {
   state: () => ({
     candidates: [],
+    companies: [],
+    // Pipeline board: the applications to one job, each with its stage, the candidate and the fit for this job
+    boardJobId: null,
+    boardApplications: [],
+    boardLoading: false,
     totalRecords: 0,
     currentPage: 1,
     rows: 10,
@@ -64,7 +83,11 @@ export const useCandidateStore = defineStore("candidates", {
   }),
   getters: {
     selectedCandidate: (state) => {
-      return state.candidates.find((c) => c.id === state.selectedCandidateId) || null;
+      return (
+        state.candidates.find((c) => c.id === state.selectedCandidateId) ||
+        state.boardApplications.map((application) => application.candidate).find((c) => c.id === state.selectedCandidateId) ||
+        null
+      );
     }
   },
   actions: {
@@ -154,7 +177,11 @@ export const useCandidateStore = defineStore("candidates", {
     async applyFilters() {
       this.loading = true;
       try {
-        await Promise.all([this.fetchDashboard(), this.fetchCandidates()]);
+        await Promise.all([
+          this.fetchDashboard(),
+          this.fetchCandidates(),
+          ...(this.boardJobId ? [this.fetchBoard(this.boardJobId)] : [])
+        ]);
       } catch (error) {
         console.error("Filtering failed", error);
         this.lastError = error.message || "Unable to refresh candidate data.";
@@ -226,6 +253,76 @@ export const useCandidateStore = defineStore("candidates", {
 
       const newInterviews = [...(candidate.interviews || []), interviewData];
       await this.updateCandidate(candidateId, { interviews: newInterviews });
+    },
+    async assignCandidate(candidateId, assignment) {
+      this.loading = true;
+      try {
+        await api.put(`/candidates/${candidateId}/assignment`, assignment);
+        await this.applyFilters();
+      } catch (error) {
+        console.error("Assign candidate failed", error);
+        this.lastError = error.response?.data?.message || error.message || "Unable to change ownership.";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchCandidateActivity(candidateId) {
+      const { data } = await api.get(`/candidates/${candidateId}/audit`, { params: { limit: 20 } });
+      return data.entries;
+    },
+    // Loads one job's applications. Only the newest request may update the board, so a slow earlier
+    // response (or one that started before a move) can never overwrite newer data.
+    async fetchBoard(jobId, { silent = false } = {}) {
+      this.boardJobId = jobId;
+      boardRequest += 1;
+      const mine = boardRequest;
+      if (!silent) this.boardLoading = true;
+      try {
+        const { data } = await api.get(`/jobs/${jobId}/applications`);
+        if (mine === boardRequest) this.boardApplications = data.applications;
+      } finally {
+        if (mine === boardRequest) this.boardLoading = false;
+      }
+    },
+    // Moves one application to another column. Updates the board at once and puts it back if the server refuses.
+    async moveApplication(applicationId, status) {
+      const card = this.boardApplications.find((a) => a.id === applicationId);
+      if (!card || card.status === status) return;
+      const previous = { status: card.status, stage: card.stage };
+      boardRequest += 1; // any board load still in flight is now out of date
+      card.status = status;
+      card.stage = `${status.charAt(0).toUpperCase()}${status.slice(1)} stage`;
+      try {
+        await api.patch(`/applications/${applicationId}`, { status });
+        await Promise.all([this.fetchDashboard(), this.fetchCandidates(), this.fetchBoard(this.boardJobId, { silent: true })]);
+      } catch (error) {
+        Object.assign(card, previous);
+        this.lastError = error.response?.data?.error || error.message || "Unable to move the candidate.";
+        throw error;
+      }
+    },
+    // A candidate's applications with the full job fit for each
+    async fetchApplications(candidateId) {
+      const { data } = await api.get(`/candidates/${candidateId}/applications`);
+      return data.applications;
+    },
+    async applyToJob(candidateId, jobId) {
+      await api.post(`/candidates/${candidateId}/applications`, { jobId });
+      await this.applyFilters();
+    },
+    async removeApplication(applicationId) {
+      await api.delete(`/applications/${applicationId}`);
+      await this.applyFilters();
+    },
+    async moveCandidateApplication(applicationId, status) {
+      await api.patch(`/applications/${applicationId}`, { status });
+      await this.applyFilters();
+    },
+    async fetchCompanies() {
+      const { data } = await api.get("/companies");
+      this.companies = data.companies;
+      return data.companies;
     },
     async seedData() {
       this.loading = true;

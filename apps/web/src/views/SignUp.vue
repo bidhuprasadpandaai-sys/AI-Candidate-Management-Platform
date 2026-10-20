@@ -5,7 +5,8 @@
 
     <div class="auth-shell">
       <header class="auth-header">
-        <span class="brand">NEXORA</span>
+        <span class="brand-mark-sm" aria-hidden="true">{{ platformName[0] }}</span>
+        <span class="brand">{{ platformName }}</span>
         <p class="switch-top">
           Already have an account?
           <router-link class="inline-link" to="/signin">Sign in</router-link>
@@ -31,11 +32,12 @@
 
           <div class="split-grid">
             <div>
-              <label for="role">Role</label>
+              <label for="role">Job title (optional)</label>
               <span class="input-wrap">
                 <i class="pi pi-briefcase" aria-hidden="true" />
-                <InputText id="role" v-model="form.role" placeholder="Hiring Manager" />
+                <InputText id="role" v-model="form.role" placeholder="e.g. Talent Partner" maxlength="80" />
               </span>
+              <small class="field-hint">This is only a label. Your access level (Admin, Recruiter, Hiring manager or Read-only) is set by an admin; new accounts start as Read-only.</small>
             </div>
             <div>
               <label for="phone">Phone</label>
@@ -68,6 +70,9 @@
 </template>
 
 <script setup>
+import { PLATFORM } from "../config/brand";
+
+const platformName = PLATFORM.name;
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import InputText from 'primevue/inputtext';
@@ -135,7 +140,7 @@ async function signup() {
 .auth-page {
   --accent: #0b7a75;
   --accent-strong: #0f5f5b;
-  --bg: linear-gradient(160deg, #f0fdf4 0%, #f8fafc 40%, #ecfeff 100%);
+  --bg: radial-gradient(1200px 600px at 10% -10%, var(--primary-100) 0%, transparent 60%), radial-gradient(900px 500px at 100% 110%, var(--accent-soft) 0%, transparent 60%), var(--surface-page);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -163,7 +168,7 @@ async function signup() {
   height: 320px;
   right: -120px;
   bottom: -120px;
-  background: #67e8f9;
+  background: var(--accent-soft);
 }
 
 .auth-shell {
@@ -176,9 +181,19 @@ async function signup() {
 .auth-header {
   margin-bottom: 1rem;
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: baseline;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.brand-mark-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-gradient);
+  color: var(--primary-color-text);
+  font-weight: 800;
 }
 
 .brand {
@@ -206,9 +221,9 @@ async function signup() {
 
 .auth-card {
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 18px;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: 16px;
+  padding: 1.75rem;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.45);
 }
@@ -323,4 +338,6 @@ label {
     font-size: 1.55rem;
   }
 }
+
+.field-hint { display: block; margin-top: 4px; color: #64748b; font-size: 0.8rem; }
 </style>

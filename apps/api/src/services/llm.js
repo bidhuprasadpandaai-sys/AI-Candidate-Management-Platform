@@ -68,11 +68,12 @@ export function buildMessages(message, candidates = []) {
   ];
 }
 
-// Returns { reply, source: "llm" } or null when disabled or on any failure,
-// so callers can fall back to the rule-based reply.
-export async function generateLlmReply({
-  message,
-  candidates,
+// Low-level call: sends chat messages to the configured model and returns the reply text, or null when
+// the model is disabled or anything fails (callers then fall back to rules).
+export async function callLlm({
+  messages,
+  maxTokens = 600,
+  temperature = 0.2,
   env = process.env,
   fetchImpl = globalThis.fetch,
   logger = console
@@ -93,10 +94,10 @@ export async function generateLlmReply({
       headers,
       body: JSON.stringify({
         model: config.model,
-        messages: buildMessages(message, candidates),
+        messages,
         stream: false,
-        temperature: 0.2,
-        max_tokens: 600
+        temperature,
+        max_tokens: maxTokens
       }),
       signal: AbortSignal.timeout(config.timeoutMs)
     });
@@ -113,10 +114,17 @@ export async function generateLlmReply({
       return null;
     }
 
-    return { reply: reply.trim(), source: "llm" };
+    return reply.trim();
   } catch (error) {
     // Never log the message, candidate data or keys.
     logger.warn(`LLM request error: ${error?.name || "Error"}`);
     return null;
   }
+}
+
+// Returns { reply, source: "llm" } or null when disabled or on any failure,
+// so callers can fall back to the rule-based reply.
+export async function generateLlmReply({ message, candidates, env, fetchImpl, logger }) {
+  const reply = await callLlm({ messages: buildMessages(message, candidates), env, fetchImpl, logger });
+  return reply ? { reply, source: "llm" } : null;
 }

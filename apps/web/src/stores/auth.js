@@ -1,13 +1,47 @@
 import { defineStore } from 'pinia';
+import {
+  ROLE_LABELS,
+  can,
+  canAnnotateCandidate,
+  canAssignCandidate,
+  canDeleteCandidate,
+  canEditCandidate,
+  effectiveRole
+} from '@acmp/shared';
 import api from '../services/api';
 
+// The UI only hides or disables things based on these rules; the API enforces them.
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     loading: false,
     error: null
   }),
+  getters: {
+    accessRole: (state) => (state.user ? effectiveRole(state.user) : null),
+    accessRoleLabel() {
+      return this.accessRole ? ROLE_LABELS[this.accessRole] : '';
+    },
+    isAdmin() {
+      return this.accessRole === 'admin';
+    }
+  },
   actions: {
+    can(permission) {
+      return can(this.user, permission);
+    },
+    canEdit(candidate) {
+      return canEditCandidate(this.user, candidate);
+    },
+    canAnnotate(candidate) {
+      return canAnnotateCandidate(this.user, candidate);
+    },
+    canDelete(candidate) {
+      return canDeleteCandidate(this.user, candidate);
+    },
+    canAssign(candidate) {
+      return canAssignCandidate(this.user, candidate);
+    },
     async loadUser() {
       this.loading = true;
       try {

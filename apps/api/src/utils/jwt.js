@@ -40,6 +40,12 @@ function sign(unsignedToken) {
     .digest("base64url");
 }
 
+// HMAC of a value, namespaced by purpose, keyed from JWT_SECRET. Used to store one-time codes
+// without keeping them in clear text.
+export function signValue(value, purpose) {
+  return crypto.createHmac("sha256", getSecret()).update(`${purpose}:${value}`).digest("hex");
+}
+
 export function signToken(payload) {
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);

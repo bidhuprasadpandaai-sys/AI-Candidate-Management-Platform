@@ -13,6 +13,8 @@ const conversationSchema = new mongoose.Schema(
         required: true
       }
     ],
+    ownerId: { type: String, index: true },
+    companyId: { type: String, index: true },
     title: {
       type: String,
       required: true,
